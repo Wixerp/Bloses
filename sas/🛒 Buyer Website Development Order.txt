@@ -1,0 +1,134 @@
+🛒 Buyer Website Development Order
+
+Step 1 — Buyer Authentication
+
+Register
+Login
+Logout
+OTP Verification
+Google Login
+
+Forgot Password
+Reset Password
+Sanctum Authentication
+Buyer Role
+
+Step 2 — Home Page
+
+Categories
+Featured Products
+Latest Products
+Offers
+Popular Products
+Search
+
+Step 3 — Categories & Product Listing
+
+Category Listing
+Subcategories
+Product Listing
+Search
+Filters
+Sorting
+Pagination
+
+Step 4 — Product Details
+
+Product Images
+Product Information
+Variants
+Attributes
+Price
+Quantity
+Seller Information(name)
+Description
+Reviews
+Questions
+Shipping Information
+Return Policy
+
+Step 5 — Wishlist
+
+Add to Wishlist
+Remove
+Wishlist Listing
+
+Step 6 — Cart
+
+Add to Cart
+Update Quantity
+Remove Item
+Cart Summary
+
+Step 7 — Addresses
+
+Add Address
+Edit Address
+Delete Address
+Default Address
+Shipping Address
+
+Step 8 — Checkout
+
+Address
+Shipping
+Payment Method
+Order Review
+Discount/Coupon
+Place Order
+
+Step 9 — Orders
+
+My Orders
+Order Details
+Seller-wise Order Details
+Order Tracking
+Order Status
+Cancel Order
+
+Step 10 — Payments
+
+Cash on Delivery
+Card
+Bank
+Payment Status
+Payment History
+
+Step 11 — Returns & Refunds
+
+Return Request
+Return Items
+Return Status
+Refund Status
+
+Step 12 — Reviews
+
+Add Review
+Rating
+Review Images
+My Reviews
+
+Step 13 — Product Questions
+
+Ask Question
+My Questions
+Seller Answers
+
+Step 14 — Buyer Profile
+
+My Profile
+Personal Information
+Password
+Addresses
+Orders
+Wishlist
+Reviews
+
+Step 18 — Final Marketplace Flow
+
+Buyer → Cart
+Cart → Checkout
+Checkout → Order
+Seller → Accept/Ship
+Delivery
+Buyer → Review

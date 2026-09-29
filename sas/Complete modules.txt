@@ -1,0 +1,11 @@
+Complete modules
+Product
+├── Model                 ✅
+├── StoreProductRequest   ✅
+├── UpdateProductRequest  ✅
+├── ProductService        ✅
+├── ProductController     ✅
+├── ProductPolicy         ✅
+├── ProductResource       ✅
+└── Routes                ✅
+------------------------------------------------------
