@@ -28,13 +28,17 @@ Route::prefix('mobile')->group(function () {
             Route::get('/countries', [SellerCountryController::class, 'getCountryBycountry']);
             Route::get('/master-types/{key}', [MasterTypeController::class, 'getkeBymaster']);
             Route::get('/orders', [OrderController::class, 'sellerOrders']);
+            Route::get('/orders/returns', [OrderController::class, 'sellerReturnOrders']);
             Route::get('/orders/{orderId}', [OrderController::class, 'sellerOrderDetail']);
+            Route::put('/order-status-update', [OrderController::class, 'updateOrderStatus']);
             Route::get('/inventory', [InventoryController::class, 'index']);
             Route::put('/inventory/{productId}', [InventoryController::class, 'update']);
 
             Route::get('/profile-show', [SellerController::class, 'profileshow']);
             Route::get('/profile-show-detail', [SellerController::class, 'profileshowdetail']);
 
+            Route::get('/get-reviews', [ProductController::class, 'getReviews']);
+            Route::post('/reviews/{reviewid}/answer', [ProductController::class, 'reviewsOfanswer']);
 
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 

@@ -41,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/order-status-update', [OrderController::class, 'updateOrderStatus']);
         Route::get('/inventory', [InventoryController::class, 'index']);
         Route::put('/inventory/{productId}', [InventoryController::class, 'update']);
+        Route::get('/shipping-methods', [OrderController::class, 'shippingMethods']);
+        Route::post('/shipping', [OrderController::class, 'createShipment']);
     });
 
     Route::get('/profile-show', [SellerController::class, 'profileshow']);
