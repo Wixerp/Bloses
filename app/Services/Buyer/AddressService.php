@@ -13,7 +13,9 @@ class AddressService
         }
 
         $userId = auth()->id();
-        return DB::table('addresses')->where('user_id', $userId)->orderByDesc('is_default')->orderByDesc('id')->get();
+        return DB::table('addresses')
+        ->where('user_id', $userId)
+        ->orderByDesc('is_default')->orderByDesc('id')->get();
     }
 
     public function createAddress(array $data)

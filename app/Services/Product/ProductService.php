@@ -5,11 +5,8 @@ namespace App\Services\Product;
 use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\{DB, Auth, Storage, Log};
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 
 class ProductService
 {
@@ -23,7 +20,6 @@ class ProductService
                 'status.description as status','products.is_featured','products.is_active',
                 'products.published_at',
                 DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
-                // Primary image
                 DB::raw("(SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
                     WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) as image"),
             ])->orderByDesc('products.id')->paginate($perPage);
@@ -52,8 +48,7 @@ class ProductService
             abort(404, 'Product not found.');
         }
 
-        $variants = DB::table('product_variants')
-            ->where('product_id', $product->id)
+        $variants = DB::table('product_variants')->where('product_id', $product->id)
             ->select(['product_variants.id','product_variants.product_id','product_variants.name','product_variants.sku',
                 'product_variants.barcode','product_variants.price','product_variants.compare_at_price','product_variants.cost_price',
                 'product_variants.weight','product_variants.length','product_variants.width','product_variants.height',
@@ -66,7 +61,6 @@ class ProductService
         $variantAttributes = collect();
 
         if ($variantIds->isNotEmpty()) {
-
             $variantAttributes = DB::table('product_variant_attribute_values')
                 ->leftJoin('attributes', 'attributes.id', '=', 'product_variant_attribute_values.attribute_id')
                 ->leftJoin('attribute_values', 'attribute_values.id', '=', 'product_variant_attribute_values.attribute_value_id')
@@ -82,16 +76,14 @@ class ProductService
             return $variant;
         });
 
-        $questions = DB::table('product_questions')
-            ->where('product_id', $product->id)
+        $questions = DB::table('product_questions')->where('product_id', $product->id)
             ->select(['product_questions.id','product_questions.product_id','product_questions.user_id',
                 'product_questions.seller_id','product_questions.question','product_questions.answer',
                 'product_questions.answered_at','product_questions.is_approved','product_questions.created_at',
                 'product_questions.updated_at',
             ])->orderByDesc('id')->get();
 
-        $images = DB::table('product_images')
-            ->where('product_id', $product->id)
+        $images = DB::table('product_images')->where('product_id', $product->id)
             ->select(['product_images.id', 'product_images.product_id', 'product_images.product_variant_id',
                 'product_images.image_path', 'product_images.alt_text', 'product_images.sort_order',
                 'product_images.is_primary', 'product_images.created_at', 'product_images.updated_at',
@@ -115,17 +107,9 @@ class ProductService
             $product->reviews = $reviews;
 
             $product->questions = DB::table('product_questions')->where('product_id', $product->id)->where('is_approved', true)
-                ->select(
-                    'id',
-                    'product_id',
-                    'user_id',
-                    'seller_id',
-                    'question',
-                    'answer',
-                    'answered_at',
-                    'is_approved',
-                    'created_at',
-                    'updated_at'
+                ->select('id','product_id','user_id','seller_id',
+                    'question','answer','answered_at','is_approved',
+                    'created_at','updated_at'
                 )->orderByDesc('created_at')->get();
 
         $product->variants = $variants;
@@ -280,20 +264,15 @@ class ProductService
         });
     }
 
-    private function generateUniqueSlug(string $name, ?int $ignoreProductId = null): string {
+    private function generateUniqueSlug(string $name, ?int $ignoreProductId = null): string
+    {
         $slug = Str::slug($name);
-
         $originalSlug = $slug;
         $counter = 1;
 
         while (
-            DB::table('products')
-                ->where('slug', $slug)
-                ->when(
-                    $ignoreProductId,
-                    fn ($query) => $query->where('id', '!=', $ignoreProductId)
-                )
-                ->exists()
+            DB::table('products')->where('slug', $slug)
+                ->when($ignoreProductId, fn ($query) => $query->where('id', '!=', $ignoreProductId))->exists()
         ) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
@@ -762,8 +741,7 @@ class ProductService
             abort(404, 'Product not found.');
         }
 
-        $variants = DB::table('product_variants')
-            ->where('product_id', $product->id)
+        $variants = DB::table('product_variants')->where('product_id', $product->id)
             ->select([
                 'product_variants.id','product_variants.product_id','product_variants.name','product_variants.sku','product_variants.barcode',
                 'product_variants.price','product_variants.compare_at_price','product_variants.cost_price',
@@ -792,8 +770,7 @@ class ProductService
             return $variant;
         });
 
-        $questions = DB::table('product_questions')
-            ->where('product_id', $product->id)->where('is_approved', false)
+        $questions = DB::table('product_questions')->where('product_id', $product->id)->where('is_approved', false)
             ->select(['product_questions.id','product_questions.product_id','product_questions.user_id',
                 'product_questions.seller_id','product_questions.question','product_questions.answer',
                 'product_questions.answered_at','product_questions.is_approved','product_questions.created_at',
@@ -924,9 +901,7 @@ class ProductService
             'updated_at' => now(),
         ]);
 
-        return DB::table('product_questions')
-            ->where('id', $questionId)
-            ->first();
+        return DB::table('product_questions')->where('id', $questionId)->first();
     }
 
     public function getSellerQuestions()
@@ -938,28 +913,16 @@ class ProductService
             ->join('users as buyer','buyer.id','=','product_questions.user_id')
             ->join('users as seller','seller.id','=','product_questions.seller_id')
             ->where('product_questions.seller_id', $sellerId)
-            ->select(
-                'product_questions.id',
-                'product_questions.product_id',
-                'product_questions.user_id',
-                'product_questions.seller_id',
-                'product_questions.question',
-                'product_questions.answer',
-                'product_questions.answered_at',
-                'product_questions.created_at',
-                'product_questions.updated_at',
-                'products.name as product_name',
-                'buyer.name as buyer_name',
-                'seller.name as seller_name'
-
-            )
-            ->orderByDesc('product_questions.created_at')
-            ->get();
+            ->select('product_questions.id','product_questions.product_id','product_questions.user_id',
+                'product_questions.seller_id','product_questions.question','product_questions.answer',
+                'product_questions.answered_at','product_questions.created_at','product_questions.updated_at',
+                'products.name as product_name','buyer.name as buyer_name','seller.name as seller_name'
+            )->orderByDesc('product_questions.created_at')->get();
     }
 
-    public function answerQuestion(int $questionId, string $answer) {
+    public function answerQuestion(int $questionId, string $answer)
+    {
         $sellerId = Auth::user()->id;
-
         $question = DB::table('product_questions')->where('id', $questionId)->where('seller_id', $sellerId)->first();
 
         if (!$question) {
@@ -967,11 +930,7 @@ class ProductService
         }
 
         DB::table('product_questions')->where('id', $questionId)->where('seller_id', $sellerId)
-            ->update([
-                'answer' => $answer,
-                'answered_at' => now(),
-                'updated_at' => now(),
-            ]);
+            ->update(['answer' => $answer,'answered_at' => now(),'updated_at' => now(),]);
 
         return DB::table('product_questions')->where('id', $questionId)->first();
     }
@@ -980,32 +939,22 @@ class ProductService
     {
         $sellerId = auth()->id();
 
-        // Seller ke products
         $productIds = DB::table('products')
             ->join('seller_store_settings','seller_store_settings.id','=','products.store_id')
             ->where('seller_store_settings.seller_id', $sellerId)->pluck('products.id');
 
-        // Reviews
         $reviews = DB::table('reviews')
-            ->join('users','users.id','=','reviews.user_id')
-            ->join('products','products.id','=','reviews.product_id')
+            ->join('users','users.id','=','reviews.user_id')->join('products','products.id','=','reviews.product_id')
             ->whereIn('reviews.product_id', $productIds)
             ->select(['reviews.id','reviews.product_id','products.name as product_name',
                 'reviews.user_id','users.name as user_name','reviews.rating','reviews.title',
                 'reviews.review','reviews.review_answer','reviews.is_verified_purchase','reviews.created_at',
-                // 'reviews.reply',
-                // 'reviews.replied_at',
-            ])
-            ->orderByDesc('reviews.created_at')
-            ->get();
+            ])->orderByDesc('reviews.created_at')->get();
 
-        // Summary
-        $summary = DB::table('reviews')
-            ->whereIn('reviews.product_id', $productIds)
+        $summary = DB::table('reviews')->whereIn('reviews.product_id', $productIds)
             ->selectRaw('COUNT(*) as total_reviews')
             ->selectRaw('COALESCE(AVG(rating), 0) as avg_rating')
             ->selectRaw('COUNT(*) FILTER (WHERE rating = 5) as five_star')
-            // ->selectRaw("COUNT(*) FILTER (WHERE reply IS NOT NULL AND reply != '') as replied")
             ->first();
 
         return [
@@ -1013,7 +962,6 @@ class ProductService
                 'total_reviews' => (int) $summary->total_reviews,
                 'avg_rating' => round((float) $summary->avg_rating, 1),
                 'five_star' => (int) $summary->five_star,
-                // 'replied' => (int) $summary->replied,
             ],
 
             'reviews' => $reviews,
@@ -1024,46 +972,20 @@ class ProductService
     {
         $sellerId = Auth::user()->id;
 
-        // Review + product + store se seller identify karo
         $review = DB::table('reviews')
-            ->join(
-                'products',
-                'products.id',
-                '=',
-                'reviews.product_id'
-            )
-            ->join(
-                'seller_store_settings',
-                'seller_store_settings.id',
-                '=',
-                'products.store_id'
-            )
-            ->where('reviews.id', $reviewid)
-            ->where('seller_store_settings.seller_id', $sellerId)
-            ->select([
-                'reviews.id',
-                'reviews.product_id',
-                'seller_store_settings.seller_id',
-            ])
-            ->first();
+            ->join('products','products.id','=','reviews.product_id')
+            ->join('seller_store_settings','seller_store_settings.id','=','products.store_id')
+            ->where('reviews.id', $reviewid)->where('seller_store_settings.seller_id', $sellerId)
+            ->select(['reviews.id','reviews.product_id','seller_store_settings.seller_id',])->first();
 
         if (!$review) {
             abort(404, 'Review not found.');
         }
 
-        // Seller ID bhi reviews table mein save karo
-        DB::table('reviews')
-            ->where('id', $reviewid)
-            ->update([
-                'seller_id' => $sellerId,
-                'review_answer' => $answer,
-                // 'replied_at' => now(),
-                'updated_at' => now(),
-            ]);
+        DB::table('reviews')->where('id', $reviewid)
+            ->update(['seller_id' => $sellerId,'review_answer' => $answer,'updated_at' => now(),]);
 
-        return DB::table('reviews')
-            ->where('id', $reviewid)
-            ->first();
+        return DB::table('reviews')->where('id', $reviewid)->first();
     }
 
     public function getBuyerProducts()
@@ -1073,30 +995,104 @@ class ProductService
             ->leftJoin('categories','categories.id','=','products.category_id')
             ->leftJoin('master_types as status','status.id','=','products.status_id')
             ->select(['products.id','products.product_code','products.name','products.slug',
-                'products.category_id', 'categories.name as category_name',
+                'products.category_id','categories.name as category_name',
+                'products.is_deal','products.deal_start_at','products.deal_end_at',
                 DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
                 'products.store_id','seller_store_settings.store_name',
                 'products.price','products.list_price','products.discount','products.tax',
-                'products.is_featured', 'products.is_active', 'products.published_at',
+                'products.is_featured','products.created_at','products.is_active','products.published_at',
                 DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand_name"),
-                DB::raw("(SELECT CONCAT( '" . config('app.url') . "/storage/', pi.image_path)
-                        FROM product_images pi WHERE pi.product_id = products.id
-                        ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image"),
+                DB::raw("
+                    (SELECT CONCAT( '" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
+                        WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image
+                "),
                 DB::raw("COALESCE((SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.product_id = products.id), 0) AS rating"),
                 DB::raw("(SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id) AS reviews_count"),
                 DB::raw("CASE WHEN COALESCE(CAST(NULLIF(products.qty, '') AS INTEGER), 0) > 0 THEN true ELSE false END AS inStock"),
-            ])->where('products.is_active', true)
-            ->whereNotNull('products.published_at')
-            ->where('status.description', 'Active')
+            ])->where('products.is_active', true)->whereNotNull('products.published_at')->where('status.description', 'Active')
             ->orderByDesc('products.id')->get();
+
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek();
+
+        $hotProductIds = DB::table('order_items')->join('orders','orders.id','=','order_items.order_id')
+            ->whereBetween('orders.created_at', [$startOfWeek, $endOfWeek,])
+            ->whereNotIn('orders.status_id', function ($query) {
+                $query->select('id')->from('master_types')->where('key', 'order_status')->whereIn('value', ['cancelled',]);
+            })->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as sold_quantity'))
+            ->groupBy('order_items.product_id')->orderByDesc('sold_quantity')->get();
+
+        $hotProducts = collect();
+
+        foreach ($hotProductIds as $hot) {
+            $product = $products->firstWhere('id', $hot->product_id);
+
+            if ($product) {
+                $product->sold_quantity = (int) $hot->sold_quantity;
+                $hotProducts->push($product);
+            }
+        }
+
+        $newArrivals = $products
+            ->filter(function ($product) use ($startOfWeek, $endOfWeek) {
+                return $product->created_at >= $startOfWeek && $product->created_at <= $endOfWeek;
+            })->sortByDesc('created_at')->values();
 
         return [
             'featured_products' => $products->where('is_featured', true)->values(),
-            'deals_of_the_day' => $products->where('is_deal', true)->filter(function ($product) {
+            'deals_of_the_day' => $products->where('is_deal', true)
+                ->filter(function ($product) {
                     return $product->deal_start_at <= now() && $product->deal_end_at >= now();
                 })->values(),
+            'hot_products' => $hotProducts->values(),
+            'new_arrivals' => $newArrivals,
             'products' => $products->where('is_featured', false)->values(),
         ];
+    }
+
+    public function reviewLike(array $data)
+    {
+        if (!auth()->check()) {
+            abort(401, 'Please login to like a review.');
+        }
+
+        $userId = auth()->id();
+
+        return DB::transaction(function () use ($data, $userId) {
+            $reviewId = $data['review_id'];
+            $review = DB::table('reviews')->where('id', $reviewId)->first();
+
+            if (!$review) {
+                abort(404, 'Review not found.');
+            }
+
+            if ($data['case'] === 'like') {
+                $existingLike = DB::table('review_likes')->where('review_id', $reviewId)->where('user_id', $userId)->exists();
+
+                if (!$existingLike) {
+                    DB::table('review_likes')->insert([
+                        'review_id' => $reviewId,
+                        'user_id' => $userId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                $liked = true;
+            }
+            else {
+                DB::table('review_likes')->where('review_id', $reviewId)->where('user_id', $userId)->delete();
+                $liked = false;
+            }
+
+            $likesCount = DB::table('review_likes')->where('review_id', $reviewId)->count();
+
+            return [
+                'review_id' => $reviewId,
+                'liked' => $liked,
+                'likes_count' => $likesCount,
+            ];
+        });
     }
 
 }

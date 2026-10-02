@@ -100,6 +100,77 @@ class OrderController extends Controller
         ]);
     }
 
+    public function storeReturn(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'order_id' => ['required','integer','exists:orders,id',],
+            'reason' => ['required','string','max:1000',],
+            'issue' => ['required','string','max:1000',],
+        ]);
+
+        $return = $this->orderService->createReturn($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Return request submitted successfully.',
+            'data' => $return,
+        ], 201);
+    }
+
+    public function sellerOrders(): JsonResponse
+    {
+        $orders = $this->orderService->sellerOrders();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Seller orders fetched successfully.',
+            'data' => $orders,
+        ]);
+    }
+
+    public function sellerOrderDetail(int $orderId): JsonResponse
+    {
+        $order = $this->orderService->sellerOrderDetail($orderId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Seller order detail fetched successfully.',
+            'data' => $order,
+        ]);
+    }
+
+    public function updateOrderStatus(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'status_id' => ['required', 'integer', 'exists:master_types,id'],
+        ]);
+
+        $order = $this->orderService->updateOrderStatus(
+            (int) $data['order_id'],
+            (int) $data['status_id']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated successfully.',
+            'data' => $order,
+        ]);
+
+    }
+
+    public function sellerReturnOrders(): JsonResponse
+    {
+        $returns = $this->orderService->sellerReturnOrders();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Seller return orders fetched successfully.',
+            'data' => $returns,
+        ]);
+    }
+
+
 
 
 }

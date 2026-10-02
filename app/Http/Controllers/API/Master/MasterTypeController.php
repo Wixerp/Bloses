@@ -12,13 +12,16 @@ class MasterTypeController extends Controller
     public function getkeBymaster($key)
     {
         $masterTypes = Cache::remember("master_types_{$key}", 300, function () use ($key) {
-            return MasterType::select('id', 'description as value')->where('key', $key)->get();
+            return MasterType::select('id', 'description as value')
+                ->where('key', $key)
+                ->get()
+                ->toArray();
         });
-        // $masterTypes = MasterType::select('id', 'description')->where('key', $key)->get();
+
         return response()->json([
             'status' => true,
             'data' => $masterTypes,
         ]);
-
     }
+
 }

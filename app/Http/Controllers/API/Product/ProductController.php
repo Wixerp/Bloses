@@ -150,8 +150,7 @@ class ProductController extends Controller
 
     public function getProduct(int $productId): JsonResponse
     {
-        $product = $this->productService
-            ->getProductDetail($productId);
+        $product = $this->productService->getProductDetail($productId);
 
         if (!$product) {
             return response()->json([
@@ -281,6 +280,22 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'Products retrieved successfully.',
             'data' => $products,
+        ]);
+    }
+
+    public function reviewLike(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'review_id' => ['required','integer','exists:reviews,id',],
+            'case' => ['required','string','in:like,unlike',],
+        ]);
+
+        $result = $this->productService->reviewLike($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => $data['case'] === 'like' ? 'Review liked successfully.' : 'Review unliked successfully.',
+            'data' => $result,
         ]);
     }
 

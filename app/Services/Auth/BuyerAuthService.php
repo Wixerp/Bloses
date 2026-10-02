@@ -71,25 +71,58 @@ class BuyerAuthService
         ];
     }
 
-    public function loginWeb(string $email, string $password): array {
-        $user = $this->authenticate($email, $password);
+    // public function loginWeb(string $email, string $password): array {
+    //     $user = $this->authenticate($email, $password);
 
-        if (!Auth::attempt(['email' => $email, 'password' => $password,])) {
+    //     if (!Auth::attempt(['email' => $email, 'password' => $password,])) {
+    //         throw ValidationException::withMessages([
+    //             'email' => [
+    //                 'The provided credentials are incorrect.'
+    //             ],
+    //         ]);
+    //     }
+    //     if (!$user->hasRole('buyer')) {
+    //         throw ValidationException::withMessages([
+    //             'email' => [
+    //                 'You are not authorized to access the buyer portal.'
+    //             ],
+    //         ]);
+    //     }
+
+    //     request()->session()->regenerate();
+    //     $user->update([
+    //         'last_login_at' => now(),
+    //     ]);
+
+    //     return [
+    //         'user' => $user->fresh(),
+    //     ];
+    // }
+    public function loginWeb(string $email, string $password): array
+    {
+        if (!Auth::attempt([
+            'email' => $email,
+            'password' => $password,
+        ])) {
             throw ValidationException::withMessages([
                 'email' => [
                     'The provided credentials are incorrect.'
                 ],
             ]);
         }
+
+        $user = Auth::user();
+
         if (!$user->hasRole('buyer')) {
+            Auth::logout();
+
             throw ValidationException::withMessages([
-                'email' => [
-                    'You are not authorized to access the buyer portal.'
-                ],
+                'email' => ['You are not authorized to access the buyer portal.'],
             ]);
         }
 
         request()->session()->regenerate();
+
         $user->update([
             'last_login_at' => now(),
         ]);

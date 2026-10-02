@@ -44,14 +44,14 @@ Route::get('/categories', [CategoriesController::class, 'getCategories']);
 
 Route::prefix('seller')->group(function () {
     //category
-    
+
 });
 
 Route::get('/master-types/{key}', [MasterTypeController::class, 'getByKey']);
 
 /*
 |--------------------------------------------------------------------------
-| Test
+| Test composer dump-autoload
 |--------------------------------------------------------------------------
 */
 

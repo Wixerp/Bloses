@@ -17,8 +17,5 @@ class MasterTypeService
 
         return MasterType::query()->whereIn('id', $ids)->orderBy('id')->get();
     }
-    // public function getByKey(string $key): Collection
-    // {
-    //     return MasterType::query()->where('key', $key)->orderBy('id')->get();
-    // }
+
 }

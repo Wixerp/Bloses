@@ -7,6 +7,7 @@ use App\Http\Controllers\API\Categories\CategoriesController;
 use App\Http\Controllers\API\Admin\ProductsController;
 use App\Http\Controllers\API\Order\OrderController;
 use App\Http\Controllers\API\Buyer\AddressController;
+use App\Http\Controllers\API\Buyer\WishlistController;
 
 Route::prefix('buyer')->group(function () {
 
@@ -20,6 +21,7 @@ Route::prefix('buyer')->group(function () {
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/orders/{orderId}', [OrderController::class, 'show']);
         Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancel']);
+        Route::post('/orders/returns', [OrderController::class, 'storeReturn']);
 
         Route::get('/profile', [AuthController::class, 'profile']);
         Route::put('/profile', [AuthController::class, 'updateProfile']);
@@ -28,6 +30,10 @@ Route::prefix('buyer')->group(function () {
         Route::post('/addresses', [AddressController::class, 'store']);
         Route::put('/addresses/{id}', [AddressController::class, 'update']);
         Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
+        
+        Route::get('/wishlist', [WishlistController::class, 'index']);
+        Route::post('/wishlist', [WishlistController::class, 'wishlist']);
+        Route::post('/review-like', [ProductController::class, 'reviewLike']);
 
         Route::post('/logout', [AuthController::class, 'logout']);
     });

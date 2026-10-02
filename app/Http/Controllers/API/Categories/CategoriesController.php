@@ -95,8 +95,7 @@ class CategoriesController extends Controller
 
     public function categoryProducts(int $categoryId): JsonResponse
     {
-        $products = $this->categoriesService
-            ->getCategoryProducts($categoryId);
+        $products = $this->categoriesService->getCategoryProducts($categoryId);
 
         return response()->json([
             'success' => true,
