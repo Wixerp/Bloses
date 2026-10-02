@@ -16,10 +16,6 @@ class SellerRegistrationController extends Controller
 
     public function register(SellerRegistrationRequest $request): JsonResponse
     {
-        // \Log::info('Seller registration request received', [
-        //     'request_data' => $request->validated(),
-        //     'files' => $request->allFiles(),
-        // ]);
         $seller = $this->sellerRegistrationService->register(
             $request->validated(),
             $request->allFiles()

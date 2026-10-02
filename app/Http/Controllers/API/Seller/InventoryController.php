@@ -16,10 +16,6 @@ class InventoryController extends Controller
         $this->inventoryService = $inventoryService;
     }
 
-
-    /**
-     * Inventory List
-     */
     public function index(): JsonResponse
     {
         $inventory = $this->inventoryService->index();
