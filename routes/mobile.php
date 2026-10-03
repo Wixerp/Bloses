@@ -8,10 +8,10 @@ use App\Http\Controllers\Api\Auth\Buyer\AuthController as BuyerAuthController;
 use App\Http\Controllers\Api\Master\MasterTypeController as MasterTypeController;
 use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, InventoryController};
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
-use App\Http\Controllers\API\Product\ProductController;
-use App\Http\Controllers\API\Categories\CategoriesController;
-use App\Http\Controllers\API\Buyer\{WishlistController, AddressController};
-use App\Http\Controllers\API\Order\OrderController;
+use App\Http\Controllers\Api\Product\ProductController;
+use App\Http\Controllers\Api\Categories\CategoriesController;
+use App\Http\Controllers\Api\Buyer\{WishlistController, AddressController};
+use App\Http\Controllers\Api\Order\OrderController;
 
 
 Route::prefix('mobile')->group(function () {

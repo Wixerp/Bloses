@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Buyer;
+namespace App\Http\Controllers\Api\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Services\Buyer\WishlistService;

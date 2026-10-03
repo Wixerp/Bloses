@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Auth\Seller;
+namespace App\Http\Controllers\Api\Auth\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\AdminLoginRequest;

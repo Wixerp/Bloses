@@ -4,12 +4,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
-use App\Http\Controllers\API\CloudinaryController;
-use App\Http\Controllers\API\Product\ProductController;
-use App\Http\Controllers\API\Admin\ProductsController;
-use App\Http\Controllers\API\MasterType\MasterTypeController;
+use App\Http\Controllers\Api\CloudinaryController;
+use App\Http\Controllers\Api\Product\ProductController;
+use App\Http\Controllers\Api\Admin\ProductsController;
+use App\Http\Controllers\Api\MasterType\MasterTypeController;
 use App\Http\Controllers\Api\Seller\SellerController;
-use App\Http\Controllers\API\Categories\CategoriesController;
+use App\Http\Controllers\Api\Categories\CategoriesController;
 
 
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
@@ -41,19 +41,7 @@ Route::prefix('admin')->group(function () {
 });
 
 Route::get('/categories', [CategoriesController::class, 'getCategories']);
-
-Route::prefix('seller')->group(function () {
-    //category
-
-});
-
 Route::get('/master-types/{key}', [MasterTypeController::class, 'getByKey']);
-
-/*
-|--------------------------------------------------------------------------
-| Test composer dump-autoload
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/test', function () {
     return 'api run';

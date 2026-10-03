@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Order;
+namespace App\Http\Controllers\Api\Order;
 
 use App\Services\Order\ShippingService;
 use Illuminate\Http\JsonResponse;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Master;
+namespace App\Http\Controllers\Api\Master;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;

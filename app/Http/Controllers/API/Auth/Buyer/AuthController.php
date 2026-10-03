@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Auth\Buyer;
+namespace App\Http\Controllers\Api\Auth\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\AdminLoginRequest;

@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\Auth\Seller\AuthController;
 use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, InventoryController};
 use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
-use App\Http\Controllers\API\Product\ProductController;
-use App\Http\Controllers\API\Order\OrderController;
+use App\Http\Controllers\Api\Product\ProductController;
+use App\Http\Controllers\Api\Order\OrderController;
 
 
 Route::prefix('seller')->group(function () {
