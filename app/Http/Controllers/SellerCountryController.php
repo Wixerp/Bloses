@@ -13,7 +13,6 @@ class SellerCountryController extends Controller
         $country = Cache::remember('countries', 300, function () {
             return Country::select('id', 'name')->get()->toArray();
         });
-        // $country = Country::select('id', 'name')->get();
 
         return response()->json([
             'status' => true,

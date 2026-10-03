@@ -13,7 +13,6 @@ class SellerProvinceController extends Controller
         $state = Cache::remember('states', 300, function () {
             return State::select('id', 'name')->get()->toArray();
         });
-        // $state = State::select('id', 'name')->get();
 
         return response()->json([
             'status' => true,

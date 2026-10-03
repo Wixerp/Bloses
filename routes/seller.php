@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Order\OrderController;
+use App\Http\Controllers\Api\Shipping\ShipmentController;
 
 
 Route::prefix('seller')->group(function () {
@@ -42,7 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index']);
         Route::put('/inventory/{productId}', [InventoryController::class, 'update']);
         Route::get('/shipping-methods', [OrderController::class, 'shippingMethods']);
-        Route::post('/shipping', [OrderController::class, 'createShipment']);
+        Route::post('/shipping', [ShipmentController::class, 'createShipment']);
+        Route::get('/shipments', [ShipmentController::class, 'getShipments']);
     });
 
     Route::get('/profile-show', [SellerController::class, 'profileshow']);

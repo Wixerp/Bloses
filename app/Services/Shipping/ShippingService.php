@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Order;
+namespace App\Services\Shipping;
 
 use Illuminate\Support\Facades\DB;
 

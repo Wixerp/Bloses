@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
 use App\Http\Controllers\Api\Buyer\{WishlistController, AddressController};
 use App\Http\Controllers\Api\Order\OrderController;
+use App\Http\Controllers\Api\Shipping\ShipmentController;
 
 
 Route::prefix('mobile')->group(function () {
@@ -39,6 +40,8 @@ Route::prefix('mobile')->group(function () {
 
             Route::get('/get-reviews', [ProductController::class, 'getReviews']);
             Route::post('/reviews/{reviewid}/answer', [ProductController::class, 'reviewsOfanswer']);
+            Route::post('/shipping', [ShipmentController::class, 'createShipment']);
+            Route::get('/shipments', [ShipmentController::class, 'getShipments']);
 
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 

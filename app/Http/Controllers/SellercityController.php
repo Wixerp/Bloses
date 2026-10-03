@@ -13,7 +13,6 @@ class SellercityController extends Controller
         $cities = Cache::remember('cities', 300, function () {
             return City::select('id', 'name')->get()->toArray();
         });
-        // $cities = City::select('id', 'name')->get();
         return response()->json([
             'status' => true,
             'data' => $cities,
