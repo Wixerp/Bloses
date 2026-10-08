@@ -3,25 +3,25 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
-use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
 use App\Http\Controllers\Api\CloudinaryController;
+use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Admin\ProductsController;
 use App\Http\Controllers\Api\MasterType\MasterTypeController;
 use App\Http\Controllers\Api\Seller\SellerController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
-
+use App\Http\Controllers\Api\Admin\Coupon\CouponController;
+use App\Http\Controllers\Api\Admin\User\UserController;
 
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
-
 Route::post('/cloudinary/upload', [CloudinaryController::class, 'upload']);
 
 Route::prefix('admin')->group(function () {
     Route::post('/login', [AuthController::class, 'adminLogin']);
 
-    // Protected Admin Routes
     Route::middleware(['auth:sanctum', 'role:admin',])->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'adminLogout']);
         Route::post('/seller-approval', [SellerController::class, 'sellerprofileapproval']);
@@ -36,6 +36,17 @@ Route::prefix('admin')->group(function () {
         Route::get('/products/stores/{storeId}/products', [ ProductsController::class, 'storeProducts']);
         Route::get('/products', [ ProductsController::class, 'allProducts']);
 
+        Route::post('/coupons', [CouponController::class, 'store']);
+        Route::get('/coupons', [CouponController::class, 'index']);
+        Route::get('/coupons/{id}', [CouponController::class, 'show']);
+        Route::put('/coupons/{id}', [CouponController::class, 'update']);
+        Route::delete('/coupons/{id}', [CouponController::class, 'destroy']);
+
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{id}', [UserController::class, 'show']);
+        Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        Route::put('/users/{id}/block', [UserController::class, 'is_blocked']);
     });
 
 });

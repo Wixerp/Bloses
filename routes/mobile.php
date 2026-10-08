@@ -6,13 +6,17 @@ use App\Http\Controllers\Api\Auth\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Auth\Seller\AuthController as SellerAuthController;
 use App\Http\Controllers\Api\Auth\Buyer\AuthController as BuyerAuthController;
 use App\Http\Controllers\Api\Master\MasterTypeController as MasterTypeController;
-use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, InventoryController};
+use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController};
+use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
 use App\Http\Controllers\Api\Buyer\{WishlistController, AddressController};
 use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
+use App\Http\Controllers\Api\Notification\NotificationController;
+use App\Http\Controllers\Api\Support\SupportController;
+use App\Http\Controllers\Api\Seller\SellerDashboardController;
 
 
 Route::prefix('mobile')->group(function () {
@@ -40,9 +44,16 @@ Route::prefix('mobile')->group(function () {
 
             Route::get('/get-reviews', [ProductController::class, 'getReviews']);
             Route::post('/reviews/{reviewid}/answer', [ProductController::class, 'reviewsOfanswer']);
+            Route::get('/shipping-methods', [OrderController::class, 'shippingMethods']);
             Route::post('/shipping', [ShipmentController::class, 'createShipment']);
             Route::get('/shipments', [ShipmentController::class, 'getShipments']);
-
+            Route::get('/earnings', [SellerEarningController::class, 'index']);
+            Route::get('/earnings/summary', [SellerEarningController::class, 'summary']);
+            Route::get('/notifications', [NotificationController::class, 'index']);
+            Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+            Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+            Route::post('/support', [SupportController::class, 'store']);
+            Route::get('/dashboard', [SellerDashboardController::class, 'index']);
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 
         });

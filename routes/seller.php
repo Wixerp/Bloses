@@ -3,12 +3,16 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Auth\Seller\AuthController;
-use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, InventoryController};
+use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController};
+use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
+use App\Http\Controllers\Api\Notification\NotificationController;
+use App\Http\Controllers\Api\Support\SupportController;
+use App\Http\Controllers\Api\Seller\SellerDashboardController;
 
 
 Route::prefix('seller')->group(function () {
@@ -45,6 +49,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/shipping-methods', [OrderController::class, 'shippingMethods']);
         Route::post('/shipping', [ShipmentController::class, 'createShipment']);
         Route::get('/shipments', [ShipmentController::class, 'getShipments']);
+        Route::get('/earnings', [SellerEarningController::class, 'index']);
+        Route::get('/earnings/summary', [SellerEarningController::class, 'summary']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/support', [SupportController::class, 'store']);
+        Route::get('/dashboard', [SellerDashboardController::class, 'index']);
     });
 
     Route::get('/profile-show', [SellerController::class, 'profileshow']);

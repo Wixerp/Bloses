@@ -15,13 +15,14 @@ class SellerAuthService
             'name' => $name,
             'email' => $email,
             'password' => Hash::make($password),
+            'is_active' => 1,
         ]);
 
         $user->assignRole('seller');
 
         return $user->fresh();
     }
-    
+
     protected function authenticate(string $email, string $password): User {
 
         $user = User::where('email', $email)->first();
@@ -48,6 +49,13 @@ class SellerAuthService
     public function login(string $email, string $password): array {
 
         $user = $this->authenticate($email, $password);
+        if ((int) $user->is_block === 1) {
+            throw ValidationException::withMessages([
+                'email' => [
+                    'Your account has been blocked. Please contact support.'
+                ],
+            ]);
+        }
         $user->tokens()->delete();
         $token = $user->createToken('seller-mobile-token')->plainTextToken;
 
@@ -73,6 +81,19 @@ class SellerAuthService
                 ],
             ]);
         }
+
+        // Authenticated user
+        $user = Auth::user();
+        if ((int) $user->is_block === 1) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => [
+                    'Your account has been blocked. Please contact support.'
+                ],
+            ]);
+        }
+
         if (!Auth::user()->hasRole('seller')) {
             throw ValidationException::withMessages([
                 'email' => [
@@ -80,13 +101,9 @@ class SellerAuthService
                 ],
             ]);
         }
-        // Session regenerate
+
         request()->session()->regenerate();
 
-        // Authenticated user
-        $user = Auth::user();
-
-        // Last login update
         $user->update([
             'last_login_at' => now(),
         ]);

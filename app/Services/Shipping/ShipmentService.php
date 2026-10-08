@@ -3,9 +3,13 @@
 namespace App\Services\Shipping;
 
 use Illuminate\Support\Facades\DB;
+use App\Services\Notification\NotificationService;
 
 class ShipmentService
 {
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
     public function getShipments(array $filters = [])
     {
         $sellerId = $this->getSellerId();
@@ -50,7 +54,7 @@ class ShipmentService
 
         return $query->orderByDesc('shipments.id')->get();
     }
-    
+
     public function createShipment(array $data)
     {
         $sellerId = $this->getSellerId();
@@ -125,6 +129,16 @@ class ShipmentService
                         'updated_at' => now(),
                     ]);
             }
+            $usersId = auth()->id();
+            $this->notificationService->create([
+                'user_id' => $usersId,
+                'type' => 'shipment',
+                'order_id' => $order->id,
+                'shipment_id' => $shipmentId,
+                'title' => 'Shipment Created',
+                'message' => "Your order {$order->order_number} has been shipped via {$shippingMethod->value}.",
+                'action_url' => "/buyer/orders/{$order->id}",
+            ]);
 
             return DB::table('shipments')
                 ->leftJoin('master_types as status','status.id','=','shipments.status_id')

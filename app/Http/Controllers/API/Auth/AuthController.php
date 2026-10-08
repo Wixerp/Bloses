@@ -9,7 +9,8 @@ use App\Services\Auth\AdminAuthService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\{Auth, Hash, DB};
+use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -18,12 +19,28 @@ class AuthController extends Controller
     ) {
     }
 
-    /**
-     * Admin Login
-     *
-     * React Web
-     * Cookie / Session Authentication
-     */
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'min:8', 'confirmed'],
+            'role' => ['required', 'in:buyer,seller,admin'],
+        ]);
+
+        $user = $this->adminAuthService->register(
+            $data['name'],
+            $data['email'],
+            $data['password'],
+            $data['role']
+        );
+
+        return ApiResponse::success(
+            'User registration successful.',
+            new AuthResource($user)
+        );
+    }
+
     public function adminLogin(AdminLoginRequest $request): JsonResponse
     {
         $result = $this->adminAuthService->loginWeb(

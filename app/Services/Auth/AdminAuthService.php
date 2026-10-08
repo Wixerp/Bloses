@@ -3,8 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\{Auth, Hash, DB};
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
 
@@ -27,6 +26,24 @@ class AdminAuthService
         }
 
         return $user;
+    }
+
+    public function register(string $name, string $email, string $password, string $role)
+    {
+        return DB::transaction(function () use ($name, $email, $password, $role)
+        {
+
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'is_active' => 1,
+            ]);
+
+            $user->assignRole($role);
+
+            return $user->fresh();
+        });
     }
 
     public function login(string $email, string $password, string $login_type): array

@@ -3,8 +3,13 @@
 namespace App\Services\Order;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\CommonHelper;
+use App\Services\Notification\NotificationService;
 
 class OrderService{
+
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
 
     public function createOrder(array $data)
     {
@@ -118,75 +123,21 @@ class OrderService{
                 'updated_at' => now(),
             ]);
 
-            return DB::table('orders')->where('id', $orderId)->first();
+            $order = DB::table('orders')->where('id', $orderId)->first();
+
+            $this->notificationService->create([
+                'user_id' => $store->seller_id,
+                'type' => 'order',
+                'order_id' => $orderId,
+                'title' => 'Order Placed',
+                'message' => "Your order {$order->order_number} has been placed successfully.",
+                'action_url' => "/buyer/orders/{$orderId}",
+            ]);
+
+            return $order;
         });
     }
 
-    // public function getMyOrders()
-    // {
-    //     if (!auth()->check()) {
-    //         abort(401, 'Please login to view your orders.');
-    //     }
-
-    //     $userId = auth()->id();
-    //     $cancelledStatusId = DB::table('master_types')->where('key', 'order_status')->where('value', 'cancelled')->value('id');
-
-    //     $orders = DB::table('orders')
-    //         ->leftJoin('master_types as payment_method','payment_method.id','=','orders.payment_method_id')
-    //         ->leftJoin('master_types as order_status','order_status.id','=','orders.status_id')
-    //         ->where('orders.user_id', $userId)
-    //         // ->where('orders.status_id', '!=', $cancelledStatusId)
-    //         ->select(['orders.id','orders.order_number','orders.payment_method_id',
-    //             'payment_method.description as payment_method',
-    //             'orders.status_id','order_status.value as status','order_status.description as status_name',
-    //             'orders.subtotal','orders.discount_amount','orders.tax_amount','orders.shipping_amount',
-    //             'orders.total_amount','orders.created_at',
-    //         ])->orderByDesc('orders.id')->get();
-
-    //     foreach ($orders as $order) {
-    //         $order->items = DB::table('order_items')
-    //             ->where('order_id', $order->id)
-    //             ->select(['id','product_id','product_variant_id','product_name',
-    //                 'variant_name','sku','unit_price as price','quantity as qty',
-    //                 'discount_amount','tax_amount','shipping_amount','total_amount',
-    //             ])->get();
-
-    //         $history = DB::table('order_status_history')
-    //             ->join('master_types as status','status.id','=','order_status_history.status_id')
-    //             ->where('order_status_history.order_id', $order->id)
-    //             ->select(['order_status_history.comment','order_status_history.status_id','status.value','status.description','order_status_history.changed_at',
-    //             ])->orderBy('order_status_history.id')->get();
-
-    //         $order->order_track = [
-    //             'processing' => false,
-    //             'shipping' => false,
-    //             'delivered' => false,
-    //             'cancelled' => false,
-    //         ];
-
-    //         foreach ($history as $track) {
-    //             if ($track->value === 'processing') {
-    //                 $order->order_track['processing'] = true;
-    //             }
-    //             if ($track->value === 'shipping') {
-    //                 $order->order_track['shipping'] = true;
-    //             }
-    //             if ($track->value === 'delivered') {
-    //                 $order->order_track['delivered'] = true;
-    //             }
-    //             if ($track->value === 'cancelled') {
-    //                 $order->order_track['cancelled'] = true;
-    //             }
-    //         }
-    //         if ($order->status === 'cancelled') {
-    //             $order->order_track['cancelled'] = true;
-    //         }
-
-    //         $order->status_history = $history;
-    //     }
-
-    //     return $orders;
-    // }
     public function getMyOrders()
     {
         if (!auth()->check()) {
@@ -394,6 +345,17 @@ class OrderService{
 
                 $createdReturns[] = DB::table('returns')->where('id', $returnId)->first();
             }
+            $returnIds = collect($createdReturns)->pluck('id')->implode(',');
+
+            $this->notificationService->create([
+                'user_id' => $userId,
+                'type' => 'return',
+                'order_id' => $order->id,
+                'return_id' => $createdReturns[0]->id,
+                'title' => 'Return Request Created',
+                'message' => "Your return request for order {$order->order_number} has been submitted successfully.",
+                'action_url' => "/buyer/orders/{$order->id}",
+            ]);
 
             return $createdReturns;
         });
@@ -527,23 +489,20 @@ class OrderService{
             abort(401, 'Please login.');
         }
 
-        // Logged-in seller ka seller_id
-        $sellerId = DB::table('sellers')
-            ->where('user_id', auth()->id())
-            ->value('id');
+        $sellerId = DB::table('sellers')->where('user_id', auth()->id())->value('id');
 
         if (!$sellerId) {
             abort(404, 'Seller profile not found.');
         }
 
-        // Check karo ke order is seller ka hai
         $order = DB::table('orders')
             ->join('order_items', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.id', $orderId)
-            ->where('order_items.seller_id', $sellerId)
+            ->where('orders.id', $orderId)->where('order_items.seller_id', $sellerId)
             ->select([
                 'orders.id',
                 'orders.status_id',
+                'orders.user_id',
+                'orders.order_number',
             ])
             ->first();
 
@@ -551,11 +510,7 @@ class OrderService{
             abort(404, 'Order not found.');
         }
 
-        // Status exist karta hai ya nahi
-        $status = DB::table('master_types')
-            ->where('id', $statusId)
-            ->where('key', 'order_status')
-            ->first();
+        $status = DB::table('master_types')->where('id', $statusId)->where('key', 'order_status')->first();
 
         if (!$status) {
             abort(400, 'Invalid order status.');
@@ -563,9 +518,7 @@ class OrderService{
 
         $previousStatusId = $order->status_id;
 
-        // Status update
-        DB::table('orders')
-            ->where('id', $orderId)
+        DB::table('orders')->where('id', $orderId)
             ->update([
                 'status_id' => $statusId,
                 'updated_at' => now(),
@@ -581,6 +534,29 @@ class OrderService{
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        if ($status->value === 'delivered') {
+            $shipmentDeliveredStatusId = DB::table('master_types')->where('key', 'order_status')->where('value', 'delivered')->value('id');
+
+            if (!$shipmentDeliveredStatusId) {
+                abort(400, 'Shipment delivered status not found.');
+            }
+
+            DB::table('shipments')->where('order_id', $orderId)->where('seller_id', $sellerId)
+                ->update([
+                    'status_id' => $shipmentDeliveredStatusId,
+                    'delivered_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $userId = auth()->id();
+                $this->notificationService->create([
+                    'user_id' => $userId,
+                    'type' => 'order',
+                    'order_id' => $orderId,
+                    'title' => 'Order Delivered',
+                    'message' => "Your order {$order->order_number} has been delivered successfully.",
+                    'action_url' => "/buyer/orders/{$orderId}",
+                ]);
+        }
 
         return DB::table('orders')
             ->leftJoin('master_types as status', 'status.id', '=', 'orders.status_id')

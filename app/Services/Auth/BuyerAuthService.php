@@ -15,6 +15,7 @@ class BuyerAuthService
             'name' => $name,
             'email' => $email,
             'password' => Hash::make($password),
+            'is_active' => 1,
         ]);
 
         $user->assignRole('buyer');
@@ -58,6 +59,13 @@ class BuyerAuthService
 
     public function login(string $email, string $password): array {
         $user = $this->authenticate($email, $password);
+        if ((int) $user->is_block === 1) {
+            throw ValidationException::withMessages([
+                'email' => [
+                    'Your account has been blocked. Please contact support.'
+                ],
+            ]);
+        }
         $user->tokens()->delete();
         $token = $user->createToken('buyer-mobile-token')->plainTextToken;
 
@@ -71,33 +79,6 @@ class BuyerAuthService
         ];
     }
 
-    // public function loginWeb(string $email, string $password): array {
-    //     $user = $this->authenticate($email, $password);
-
-    //     if (!Auth::attempt(['email' => $email, 'password' => $password,])) {
-    //         throw ValidationException::withMessages([
-    //             'email' => [
-    //                 'The provided credentials are incorrect.'
-    //             ],
-    //         ]);
-    //     }
-    //     if (!$user->hasRole('buyer')) {
-    //         throw ValidationException::withMessages([
-    //             'email' => [
-    //                 'You are not authorized to access the buyer portal.'
-    //             ],
-    //         ]);
-    //     }
-
-    //     request()->session()->regenerate();
-    //     $user->update([
-    //         'last_login_at' => now(),
-    //     ]);
-
-    //     return [
-    //         'user' => $user->fresh(),
-    //     ];
-    // }
     public function loginWeb(string $email, string $password): array
     {
         if (!Auth::attempt([
@@ -112,7 +93,15 @@ class BuyerAuthService
         }
 
         $user = Auth::user();
+        if ((int) $user->is_block === 1) {
+            Auth::logout();
 
+            throw ValidationException::withMessages([
+                'email' => [
+                    'Your account has been blocked. Please contact support.'
+                ],
+            ]);
+        }
         if (!$user->hasRole('buyer')) {
             Auth::logout();
 

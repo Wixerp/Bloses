@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Seller;
+namespace App\Services\Inventory;
 
 use Illuminate\Support\Facades\DB;
 

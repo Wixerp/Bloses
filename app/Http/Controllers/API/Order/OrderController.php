@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Order;
 
 use App\Http\Controllers\Controller;
 use App\Services\Order\OrderService;
+use App\Services\Seller\SellerEarningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -150,6 +151,10 @@ class OrderController extends Controller
             (int) $data['order_id'],
             (int) $data['status_id']
         );
+         app(SellerEarningService::class)
+            ->generateForDeliveredOrder(
+                (int) $data['order_id']
+            );
 
         return response()->json([
             'success' => true,
