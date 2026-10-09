@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CloudinaryController;
 use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Admin\ProductsController;
+use App\Http\Controllers\Api\Admin\ReviewController;
 use App\Http\Controllers\Api\MasterType\MasterTypeController;
 use App\Http\Controllers\Api\Seller\SellerController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
@@ -47,6 +48,11 @@ Route::prefix('admin')->group(function () {
         Route::put('/users/{id}', [UserController::class, 'update']);
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
         Route::put('/users/{id}/block', [UserController::class, 'is_blocked']);
+
+        Route::get('/reviews', [ReviewController::class, 'index']);
+        Route::get('/reviews/{id}', [ReviewController::class, 'show']);
+        Route::put('/reviews/{id}', [ReviewController::class, 'update']);
+        Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
     });
 
 });
