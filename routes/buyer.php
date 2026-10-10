@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\Admin\ProductsController;
 use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Buyer\AddressController;
 use App\Http\Controllers\Api\Buyer\WishlistController;
+use App\Http\Controllers\Api\Support\BuyerSellerChatController;
+
 
 Route::prefix('buyer')->group(function () {
 
@@ -30,10 +32,12 @@ Route::prefix('buyer')->group(function () {
         Route::post('/addresses', [AddressController::class, 'store']);
         Route::put('/addresses/{id}', [AddressController::class, 'update']);
         Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
-        
+
         Route::get('/wishlist', [WishlistController::class, 'index']);
         Route::post('/wishlist', [WishlistController::class, 'wishlist']);
         Route::post('/review-like', [ProductController::class, 'reviewLike']);
+        Route::get('/orders/{orderId}/chat', [BuyerSellerChatController::class, 'openBuyerChat']);
+        Route::post('/orders/{orderId}/chat/messages', [BuyerSellerChatController::class, 'buyerSendMessage']);
 
         Route::post('/logout', [AuthController::class, 'logout']);
     });

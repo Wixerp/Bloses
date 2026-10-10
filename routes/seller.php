@@ -55,8 +55,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::get('/support', [SupportController::class, 'myTickets']);
-        Route::post('/support', [SupportController::class, 'store']);
+        // Route::post('/support', [SupportController::class, 'store']);
+        Route::post('/support/{id?}', [SupportController::class, 'store']);
         Route::get('/support/{id}', [SupportController::class, 'myTicketDetail']);
+
         Route::get('/dashboard', [SellerDashboardController::class, 'index']);
     });
 

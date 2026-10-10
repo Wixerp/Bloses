@@ -11,21 +11,72 @@ use Illuminate\Support\Str;
 class ProductService
 {
     public function getAll(int $perPage = 15): LengthAwarePaginator
-    {
-        $products = DB::table('products')
-            ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
-            ->leftJoin('master_types as status','status.id','=','products.status_id')
-            ->select(['products.id','products.product_code','products.name',
-                'seller_store_settings.store_name as store_name',
-                'status.description as status','products.is_featured','products.is_active',
-                'products.published_at',
-                DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
-                DB::raw("(SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
-                    WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) as image"),
-            ])->orderByDesc('products.id')->paginate($perPage);
+{
+    $sellerId = auth()->id();
 
-        return $products;
-    }
+    $storeIds = DB::table('seller_store_settings')
+        ->where('seller_id', $sellerId)
+        ->pluck('id');
+
+    Log::info('Seller Products - Debug', [
+        'auth_id' => $sellerId,
+        'store_ids' => $storeIds->toArray(),
+    ]);
+
+    $products = DB::table('products')
+        ->leftJoin(
+            'seller_store_settings',
+            'seller_store_settings.id',
+            '=',
+            'products.store_id'
+        )
+        ->leftJoin(
+            'master_types as status',
+            'status.id',
+            '=',
+            'products.status_id'
+        )
+        ->where('seller_store_settings.seller_id', $sellerId)
+        ->select(
+            'products.id',
+            'products.product_code',
+            'products.name',
+            'seller_store_settings.store_name as store_name',
+            'status.description as status',
+            'products.is_featured',
+            'products.is_active',
+            'products.published_at',
+            DB::raw("
+                CASE
+                    WHEN products.brand IS NOT NULL
+                         AND products.brand != ''
+                    THEN products.brand
+                    ELSE 'No Brand'
+                END AS brand
+            "),
+            DB::raw("
+                (
+                    SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path)
+                    FROM product_images pi
+                    WHERE pi.product_id = products.id
+                    ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                    LIMIT 1
+                ) AS image
+            ")
+        )
+        ->orderByDesc('products.id')
+        ->paginate($perPage);
+
+    Log::info('Seller Products - Result', [
+        'auth_id' => $sellerId,
+        'total_products' => $products->total(),
+        'product_ids' => $products->getCollection()
+            ->pluck('id')
+            ->toArray(),
+    ]);
+
+    return $products;
+}
 
     public function findById(int $id): object
     {

@@ -106,62 +106,6 @@ class AdminSupportService
         return $query->paginate($perPage);
     }
 
-    // public function getTicketById(int $ticketId): array
-    // {
-    //     // Selected ticket se seller ki user_id nikalo
-    //     $selectedTicket = DB::table('support_tickets')
-    //         ->where('id', $ticketId)
-    //         ->first();
-
-    //     abort_if(!$selectedTicket, 404, 'Support ticket not found.');
-
-    //     $sellerId = $selectedTicket->user_id;
-
-    //     // Seller ke tamam tickets
-    //     $tickets = DB::table('support_tickets')
-    //         ->leftJoin('users as seller', 'seller.id', '=', 'support_tickets.user_id')
-    //         ->where('support_tickets.user_id', $sellerId)
-    //         ->select(
-    //             'support_tickets.id',
-    //             'support_tickets.user_id',
-    //             'support_tickets.subject',
-    //             'support_tickets.message',
-    //             'support_tickets.last_reply_at',
-    //             'support_tickets.image',
-    //             'seller.name as seller_name',
-    //             'seller.email as seller_email'
-    //         )->orderBy('support_tickets.created_at')->orderBy('support_tickets.id')->get();
-
-    //     foreach ($tickets as $ticket) {
-    //         $ticket->image_url = $ticket->image
-    //             ? Storage::disk('public')->url($ticket->image)
-    //             : null;
-    //     }
-
-    //     // Seller ke tamam tickets ki seller/admin chat history
-    //     $replies = DB::table('support_ticket_replies')
-    //         ->join('support_tickets','support_tickets.id','=','support_ticket_replies.support_ticket_id')
-    //         ->leftJoin('users as sender','sender.id','=','support_ticket_replies.user_id')
-    //         ->where('support_tickets.user_id', $sellerId)
-    //         ->select(
-    //             'support_ticket_replies.id',
-    //             'support_ticket_replies.support_ticket_id',
-    //             'support_ticket_replies.user_id',
-    //             'support_ticket_replies.sender_type',
-    //             'support_ticket_replies.message',
-    //             'sender.name as sender_name',
-    //         )
-    //         ->orderBy('support_ticket_replies.created_at')
-    //         ->orderBy('support_ticket_replies.id')
-    //         ->get();
-
-    //     return [
-    //         'seller_id' => $sellerId,
-    //         'tickets' => $tickets,
-    //         'replies' => $replies,
-    //     ];
-    // }
-
     public function getTicketById(int $ticketId): array
     {
         // Selected ticket se seller ki user_id nikalo
@@ -234,7 +178,6 @@ class AdminSupportService
             'replies' => $replies,
         ];
     }
-
 
     public function replyToTicket(
         int $ticketId,

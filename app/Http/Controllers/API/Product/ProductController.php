@@ -39,13 +39,6 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): JsonResponse
     {
-        // Log::info('REQUEST FILES', [
-        //     'files' => $request->allFiles(),
-        // ]);
-
-        // Log::info('REQUEST DATA', [
-        //     'data' => $request->all(),
-        // ]);
         $product = $this->productService->create(
             $request->validated()
         );
