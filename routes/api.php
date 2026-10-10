@@ -6,13 +6,13 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\CloudinaryController;
 use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
 use App\Http\Controllers\Api\Product\ProductController;
-use App\Http\Controllers\Api\Admin\ProductsController;
-use App\Http\Controllers\Api\Admin\ReviewController;
+use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController};
+use App\Http\Controllers\Api\Admin\User\UserController;
+use App\Http\Controllers\Api\Admin\Coupon\CouponController;
+use App\Http\Controllers\Api\Support\AdminSupportController;
 use App\Http\Controllers\Api\MasterType\MasterTypeController;
 use App\Http\Controllers\Api\Seller\SellerController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
-use App\Http\Controllers\Api\Admin\Coupon\CouponController;
-use App\Http\Controllers\Api\Admin\User\UserController;
 
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
@@ -27,8 +27,8 @@ Route::prefix('admin')->group(function () {
         Route::post('/logout', [AuthController::class, 'adminLogout']);
         Route::post('/seller-approval', [SellerController::class, 'sellerprofileapproval']);
 
-        Route::post('/categories', [CategoriesController::class, 'postCategories']);
         Route::get('/categories/{id}', [CategoriesController::class, 'getCategory']);
+        Route::post('/categories', [CategoriesController::class, 'postCategories']);
         Route::put('/categories/{id}', [CategoriesController::class, 'updateCategories']);
         Route::delete('/categories/{id}', [CategoriesController::class, 'deleteCategories']);
 
@@ -53,6 +53,14 @@ Route::prefix('admin')->group(function () {
         Route::get('/reviews/{id}', [ReviewController::class, 'show']);
         Route::put('/reviews/{id}', [ReviewController::class, 'update']);
         Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
+
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{id}', [OrderController::class, 'show']);
+
+        Route::get('/tickets', [AdminSupportController::class, 'index']);
+        Route::get('/tickets/{id}', [AdminSupportController::class, 'show']);
+        Route::post('/tickets/{id}/reply', [AdminSupportController::class, 'reply']);
+        Route::patch('/tickets/{id}/status', [AdminSupportController::class, 'updateStatus']);
     });
 
 });

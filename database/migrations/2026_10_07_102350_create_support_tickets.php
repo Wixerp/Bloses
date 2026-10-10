@@ -18,6 +18,9 @@ return new class extends Migration
             $table->foreignId('priority_id')->nullable()->constrained('master_types')->nullOnDelete();
             $table->string('subject');
             $table->text('message');
+            $table->unsignedBigInteger('assigned_admin_id')->nullable();
+            $table->timestamp('resolved_at')->nullable();
+            $table->timestamp('last_reply_at')->nullable();
             $table->foreignId('status_id')->nullable()->constrained('master_types')->nullOnDelete();
             $table->timestamps();
         });

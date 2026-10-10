@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\Auth\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Auth\Seller\AuthController as SellerAuthController;
 use App\Http\Controllers\Api\Auth\Buyer\AuthController as BuyerAuthController;
 use App\Http\Controllers\Api\Master\MasterTypeController as MasterTypeController;
-use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController};
+use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController, SellerDashboardController};
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
 use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Support\SupportController;
-use App\Http\Controllers\Api\Seller\SellerDashboardController;
 
 
 Route::prefix('mobile')->group(function () {
@@ -52,7 +51,9 @@ Route::prefix('mobile')->group(function () {
             Route::get('/notifications', [NotificationController::class, 'index']);
             Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
             Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+            Route::get('/support', [SupportController::class, 'myTickets']);
             Route::post('/support', [SupportController::class, 'store']);
+            Route::get('/support/{id}', [SupportController::class, 'myTicketDetail']);
             Route::get('/dashboard', [SellerDashboardController::class, 'index']);
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 
