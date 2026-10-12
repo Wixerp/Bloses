@@ -3,6 +3,7 @@
 namespace App\Services\Support;
 
 use Illuminate\Support\Facades\DB;
+use App\Events\ChatMessageSent;
 use Illuminate\Support\Facades\Storage;
 
 class AdminSupportService
@@ -179,23 +180,65 @@ class AdminSupportService
         ];
     }
 
-    public function replyToTicket(
-        int $ticketId,
-        int $adminId,
-        string $message
-    ): object {
-        return DB::transaction(function () use (
-            $ticketId,
-            $adminId,
-            $message
-        ) {
-            $ticket = DB::table('support_tickets')
-                ->where('id', $ticketId)
-                ->lockForUpdate()
-                ->first();
+    // public function replyToTicket(
+    //     int $ticketId,
+    //     int $adminId,
+    //     string $message
+    // ): object {
+    //     return DB::transaction(function () use (
+    //         $ticketId,
+    //         $adminId,
+    //         $message
+    //     ) {
+    //         $ticket = DB::table('support_tickets')
+    //             ->where('id', $ticketId)
+    //             ->lockForUpdate()
+    //             ->first();
 
+    //         abort_if(!$ticket, 404, 'Support ticket not found.');
+
+    //         $now = now();
+
+    //         $replyId = DB::table('support_ticket_replies')
+    //             ->insertGetId([
+    //                 'support_ticket_id' => $ticketId,
+    //                 'user_id' => $adminId,
+    //                 'sender_type' => 'admin',
+    //                 'message' => $message,
+    //                 'created_at' => $now,
+    //                 'updated_at' => $now,
+    //             ]);
+
+    //         // Important: actual column is last_reply_at
+    //         DB::table('support_tickets')
+    //             ->where('id', $ticketId)
+    //             ->update([
+    //                 'last_reply_at' => $now,
+    //                 'updated_at' => $now,
+    //             ]);
+
+    //         return DB::table('support_ticket_replies')
+    //             ->leftJoin(
+    //                 'users as sender',
+    //                 'sender.id',
+    //                 '=',
+    //                 'support_ticket_replies.user_id'
+    //             )
+    //             ->where('support_ticket_replies.id', $replyId)
+    //             ->select(
+    //                 'support_ticket_replies.*',
+    //                 'sender.name as sender_name',
+    //                 'sender.email as sender_email'
+    //             )
+    //             ->first();
+    //     });
+    // }
+
+    public function replyToTicket(int $ticketId, int $adminId, string $message): object {
+        $reply = DB::transaction(function () use ($ticketId, $adminId, $message)
+        {
+            $ticket = DB::table('support_tickets')->where('id', $ticketId)->lockForUpdate()->first();
             abort_if(!$ticket, 404, 'Support ticket not found.');
-
             $now = now();
 
             $replyId = DB::table('support_ticket_replies')
@@ -208,9 +251,7 @@ class AdminSupportService
                     'updated_at' => $now,
                 ]);
 
-            // Important: actual column is last_reply_at
-            DB::table('support_tickets')
-                ->where('id', $ticketId)
+            DB::table('support_tickets')->where('id', $ticketId)
                 ->update([
                     'last_reply_at' => $now,
                     'updated_at' => $now,
@@ -222,16 +263,34 @@ class AdminSupportService
                     'sender.id',
                     '=',
                     'support_ticket_replies.user_id'
-                )
-                ->where('support_ticket_replies.id', $replyId)
+                )->where('support_ticket_replies.id', $replyId)
                 ->select(
                     'support_ticket_replies.*',
                     'sender.name as sender_name',
                     'sender.email as sender_email'
-                )
-                ->first();
+                )->first();
         });
+
+        // Broadcast only after the database transaction commits.
+        if ($ticket->conversation_type === 'buyer_seller') {
+            $chatMessage = [
+                'id' => (int) $reply->id,
+                'support_ticket_id' => (int) $reply->support_ticket_id,
+                'user_id' => (int) $reply->user_id,
+                'sender_type' => 'admin',
+                'message' => $reply->message,
+                'image' => $reply->image ?? null,
+                'image_url' => !empty($reply->image) ? Storage::disk('public')->url($reply->image) : null,
+                'sender_name' => $reply->sender_name,
+                'created_at' => $reply->created_at,
+            ];
+
+            event(new ChatMessageSent((int) $ticketId, $chatMessage));
+        }
+
+        return $reply;
     }
+
 
     public function updateTicketStatus(
         int $ticketId,

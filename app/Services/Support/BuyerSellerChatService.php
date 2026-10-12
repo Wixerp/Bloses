@@ -254,7 +254,11 @@ class BuyerSellerChatService
             $result['ticket_id'],
             $reply
         ));
-
+        // \Log::info('Chat message event dispatched', [
+        //     'ticket_id' => $result['ticket_id'],
+        //     'reply_id' => $reply,
+        //     'sender_type' => 'buyer',
+        // ]);
         return [
             'success' => true,
             'message' => 'Message sent successfully.',

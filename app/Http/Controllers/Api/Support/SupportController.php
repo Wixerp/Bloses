@@ -14,39 +14,6 @@ class SupportController extends Controller
         protected SupportService $supportService
     ) {}
 
-    // public function store(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'subject' => ['nullable', 'string', 'max:255'],
-    //         'message' => ['nullable', 'string', 'max:10000'],
-    //         'complaint_type_id' => ['nullable', 'integer'],
-    //         'priority_id' => ['nullable', 'integer'],
-    //         'image' => [
-    //             'nullable',
-    //             'image',
-    //             'mimes:jpg,jpeg,png,webp',
-    //             'max:5120',
-    //         ],
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Validation failed.',
-    //             'errors' => $validator->errors(),
-    //         ], 422);
-    //     }
-
-    //     $ticket = $this->supportService->createTicket(
-    //         $validator->validated()
-    //     );
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => 'Support request submitted successfully.',
-    //         'data' => $ticket,
-    //     ], 201);
-    // }
     public function store(Request $request, ?int $id = null)
     {
         $validator = Validator::make($request->all(), [
@@ -70,9 +37,7 @@ class SupportController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
-        Log::info('Seller Products - Debug', [
-            'id' => $id,
-        ]);
+
 
         $data = $validator->validated();
 
@@ -101,7 +66,7 @@ class SupportController extends Controller
         ]);
     }
 
-    public function myTicketDetail(int $id)
+    public function myTicketDetail(Request $request, int $id)
     {
         $data = $this->supportService->getMyTicketById($id);
 

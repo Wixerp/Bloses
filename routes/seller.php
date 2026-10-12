@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::get('/support', [SupportController::class, 'myTickets']);
         // Route::post('/support', [SupportController::class, 'store']);
+        // Route::post('/support/{id?}', [SupportController::class, 'store']);
         Route::post('/support/{id?}', [SupportController::class, 'store']);
         Route::get('/support/{id}', [SupportController::class, 'myTicketDetail']);
 

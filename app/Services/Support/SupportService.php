@@ -3,8 +3,10 @@
 namespace App\Services\Support;
 
 use Illuminate\Http\UploadedFile;
+use App\Events\ChatMessageSent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class SupportService
 {
@@ -72,12 +74,26 @@ class SupportService
                         'updated_at' => $now,
                     ]);
 
-                DB::table('support_tickets')
+                    DB::table('support_tickets')
                     ->where('id', $ticket->id)
                     ->update([
                         'last_reply_at' => $now,
                         'updated_at' => $now,
                     ]);
+
+                    $chatMessage = [
+                        'id' => (int) $replyId,
+                        'support_ticket_id' => (int) $ticket->id,
+                        'user_id' => (int) $userId,
+                        'sender_type' => 'seller',
+                        'message' => $data['message'] ?? '',
+                        'image' => $imagePath,
+                        'image_url' => $imagePath ? Storage::disk('public')->url($imagePath) : null,
+                        'created_at' => $now->toISOString(),
+                    ];
+
+
+                    event(new ChatMessageSent((int) $ticket->id, $chatMessage));
 
                 return [
                     'message' => 'Reply sent successfully.',
@@ -130,40 +146,6 @@ class SupportService
         });
     }
 
-    // public function getMyTickets()
-    // {
-    //     $userId = auth()->id();
-
-    //     if (!$userId) {
-    //         abort(401, 'Please login first.');
-    //     }
-
-    //     return DB::table('support_tickets')
-    //         ->where('support_tickets.user_id', $userId)
-    //         ->leftJoin('master_types as status', 'status.id', '=', 'support_tickets.status_id')
-    //         ->leftJoin('support_ticket_replies as latest_reply', function ($join) {
-    //             $join->on('latest_reply.id', '=',
-    //                 DB::raw('(
-    //                     SELECT r.id FROM support_ticket_replies r
-    //                     WHERE r.support_ticket_id = support_tickets.id
-    //                     ORDER BY r.created_at DESC, r.id DESC
-    //                     LIMIT 1
-    //                 )')
-    //             );
-    //         })
-    //         ->select(
-    //             'support_tickets.id','support_tickets.user_id','support_tickets.subject','support_tickets.message','support_tickets.image',
-    //             'support_tickets.status_id','status.description as status_name','support_tickets.created_at','support_tickets.last_reply_at',
-    //             'latest_reply.message as latest_message','latest_reply.sender_type as latest_sender_type','latest_reply.user_id as latest_sender_id'
-    //         )
-    //         ->orderByRaw('COALESCE(latest_reply.created_at, support_tickets.last_reply_at, support_tickets.created_at ) DESC')
-    //         ->orderByDesc('support_tickets.id')->get()
-    //         ->map(function ($ticket) {
-    //             $ticket->image_url = $ticket->image ? Storage::disk('public')->url($ticket->image) : null;
-
-    //             return $ticket;
-    //         });
-    // }
     public function getMyTickets()
     {
         $userId = auth()->id();
@@ -232,68 +214,6 @@ class SupportService
             });
     }
 
-    // public function getMyTicketById(int $id): array
-    // {
-    //     $userId = auth()->id();
-
-    //     if (!$userId) {
-    //         abort(401, 'Please login first.');
-    //     }
-
-    //     $ticket = DB::table('support_tickets')
-    //         ->where('support_tickets.id', $id)
-    //         ->where('support_tickets.user_id', $userId)
-    //         ->select(
-    //             'id',
-    //             'user_id',
-    //             'subject',
-    //             'message',
-    //             'last_reply_at',
-    //             'image',
-    //             'created_at',
-    //             'updated_at'
-    //         )
-    //         ->first();
-
-    //     abort_if(!$ticket, 404, 'Support ticket not found.');
-
-    //     // Ticket image URL
-    //     $ticket->image_url = $ticket->image
-    //         ? Storage::disk('public')->url($ticket->image)
-    //         : null;
-
-    //     // Ticket replies with sender details and images
-    //     $replies = DB::table('support_ticket_replies as r')
-    //         ->leftJoin('users as sender', 'sender.id', '=', 'r.user_id')
-    //         ->where('r.support_ticket_id', $id)
-    //         ->select(
-    //             'r.id',
-    //             'r.support_ticket_id',
-    //             'r.user_id',
-    //             'r.sender_type',
-    //             'r.message',
-    //             'r.image',
-    //             'r.created_at',
-    //             'r.updated_at',
-    //             'sender.name as sender_name',
-    //             'sender.email as sender_email'
-    //         )
-    //         ->orderBy('r.created_at')
-    //         ->orderBy('r.id')
-    //         ->get()
-    //         ->map(function ($reply) {
-    //             $reply->image_url = $reply->image
-    //                 ? Storage::disk('public')->url($reply->image)
-    //                 : null;
-
-    //             return $reply;
-    //         });
-
-    //     return [
-    //         'ticket' => $ticket,
-    //         'replies' => $replies,
-    //     ];
-    // }
     public function getMyTicketById(int $id): array
     {
         $userId = auth()->id();
@@ -330,10 +250,10 @@ class SupportService
                 'support_tickets.message',
                 'support_tickets.last_reply_at',
                 'support_tickets.image',
-                'support_tickets.created_at',
-                'support_tickets.updated_at',
+                // 'support_tickets.created_at',
+                // 'support_tickets.updated_at',
                 'buyer.name as buyer_name',
-                'buyer.email as buyer_email'
+                // 'buyer.email as buyer_email'
             )
             ->first();
 
@@ -353,10 +273,10 @@ class SupportService
                 'r.sender_type',
                 'r.message',
                 'r.image',
-                'r.created_at',
-                'r.updated_at',
+                // 'r.created_at',
+                // 'r.updated_at',
                 'sender.name as sender_name',
-                'sender.email as sender_email'
+                // 'sender.email as sender_email'
             )
             ->orderBy('r.created_at')
             ->orderBy('r.id')
@@ -369,9 +289,18 @@ class SupportService
                 return $reply;
             });
 
+        $buyerReplies = $replies
+            ->where('sender_type', 'buyer')
+            ->values();
+
+        $sellerReplies = $replies
+            ->where('sender_type', 'seller')
+            ->values();
+
         return [
             'ticket' => $ticket,
-            'replies' => $replies,
+            'buyer_replies' => $buyerReplies,
+            'seller_replies' => $sellerReplies,
         ];
     }
 
