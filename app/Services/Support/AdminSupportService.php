@@ -10,39 +10,21 @@ class AdminSupportService
 {
     public function getTickets(array $filters = [])
     {
-        // Har seller ka latest ticket ID find karo
         $latestTicketIds = DB::table('support_tickets as st')
             ->selectRaw('DISTINCT ON (st.user_id) st.id')
             ->leftJoin('support_ticket_replies as lr', function ($join) {
-                $join->on('lr.id', '=', DB::raw('(
-                    SELECT r.id
-                    FROM support_ticket_replies r
-                    WHERE r.support_ticket_id = st.id
-                    ORDER BY r.created_at DESC, r.id DESC
-                    LIMIT 1
-                )'));
-            })
-            ->orderBy('st.user_id')
-            ->orderByRaw('COALESCE(
-                lr.created_at,
-                st.last_reply_at,
-                st.created_at
-            ) DESC')
-            ->orderByDesc('st.id');
+                $join->on('lr.id', '=', DB::raw('(SELECT r.id FROM support_ticket_replies r WHERE r.support_ticket_id = st.id
+                    ORDER BY r.created_at DESC, r.id DESC LIMIT 1)'));
+            })->orderBy('st.user_id')
+            ->orderByRaw('COALESCE(lr.created_at, st.last_reply_at, st.created_at) DESC')->orderByDesc('st.id');
 
         $query = DB::table('support_tickets')
             ->joinSub($latestTicketIds, 'latest_ticket', function ($join) {
-                $join->on(
-                    'latest_ticket.id',
-                    '=',
-                    'support_tickets.id'
-                );
+                $join->on('latest_ticket.id', '=', 'support_tickets.id');
             })
             ->leftJoin('users as seller', 'seller.id', '=', 'support_tickets.user_id')
             ->leftJoin('support_ticket_replies as latest_reply', function ($join) {
-                $join->on(
-                    'latest_reply.id',
-                    '=',
+                $join->on('latest_reply.id', '=',
                     DB::raw('(
                         SELECT r.id
                         FROM support_ticket_replies r
@@ -53,28 +35,14 @@ class AdminSupportService
                 );
             })
             ->select(
-                'support_tickets.id',
-                'support_tickets.user_id',
-                'support_tickets.subject',
-                'support_tickets.message',
-                'support_tickets.image',
-                'support_tickets.status_id',
-                'support_tickets.created_at',
-                'support_tickets.last_reply_at',
-                'support_tickets.resolved_at',
-                'seller.name as seller_name',
-                'seller.email as seller_email',
-                'latest_reply.message as latest_message',
-                'latest_reply.sender_type as latest_sender_type',
+                'support_tickets.id','support_tickets.user_id','support_tickets.subject','support_tickets.message',
+                'support_tickets.image','support_tickets.status_id','support_tickets.created_at','support_tickets.last_reply_at',
+                'support_tickets.resolved_at','seller.name as seller_name','seller.email as seller_email',
+                'latest_reply.message as latest_message','latest_reply.sender_type as latest_sender_type',
                 'latest_reply.user_id as latest_sender_id',
-                DB::raw('COALESCE(
-                    latest_reply.created_at,
-                    support_tickets.last_reply_at,
-                    support_tickets.created_at
-                ) as last_message_at')
+                DB::raw('COALESCE(latest_reply.created_at, support_tickets.last_reply_at, support_tickets.created_at) as last_message_at')
             );
 
-        // Search
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
 
@@ -86,7 +54,6 @@ class AdminSupportService
             });
         }
 
-        // Optional status filter
         if (isset($filters['status_id']) && $filters['status_id'] !== '') {
             $query->where(
                 'support_tickets.status_id',
@@ -94,14 +61,8 @@ class AdminSupportService
             );
         }
 
-        // Latest activity first
-        $query->orderByRaw('COALESCE(
-            latest_reply.created_at,
-            support_tickets.last_reply_at,
-            support_tickets.created_at
-        ) DESC')
+        $query->orderByRaw('COALESCE(latest_reply.created_at, support_tickets.last_reply_at, support_tickets.created_at) DESC')
         ->orderByDesc('support_tickets.id');
-
         $perPage = min(max((int) ($filters['per_page'] ?? 15), 1), 100);
 
         return $query->paginate($perPage);
