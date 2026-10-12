@@ -15,7 +15,8 @@ use App\Http\Controllers\Api\Buyer\{WishlistController, AddressController};
 use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
 use App\Http\Controllers\Api\Notification\NotificationController;
-use App\Http\Controllers\Api\Support\SupportController;
+use App\Http\Controllers\Api\Support\{SupportController, BuyerSellerChatController};
+
 
 
 Route::prefix('mobile')->group(function () {

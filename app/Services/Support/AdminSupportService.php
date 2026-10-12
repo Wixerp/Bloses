@@ -34,13 +34,27 @@ class AdminSupportService
                     )')
                 );
             })
+            ->where('support_tickets.conversation_type', 'support')
             ->select(
-                'support_tickets.id','support_tickets.user_id','support_tickets.subject','support_tickets.message',
-                'support_tickets.image','support_tickets.status_id','support_tickets.created_at','support_tickets.last_reply_at',
-                'support_tickets.resolved_at','seller.name as seller_name','seller.email as seller_email',
-                'latest_reply.message as latest_message','latest_reply.sender_type as latest_sender_type',
+                'support_tickets.id',
+                'support_tickets.user_id',
+                'support_tickets.subject',
+                'support_tickets.message',
+                'support_tickets.image',
+                // 'support_tickets.status_id',
+                // 'support_tickets.created_at',
+                'support_tickets.last_reply_at',
+                // 'support_tickets.resolved_at',
+                'seller.name as seller_name',
+                // 'seller.email as seller_email',
+                'latest_reply.message as latest_message',
+                'latest_reply.sender_type as latest_sender_type',
                 'latest_reply.user_id as latest_sender_id',
-                DB::raw('COALESCE(latest_reply.created_at, support_tickets.last_reply_at, support_tickets.created_at) as last_message_at')
+                DB::raw('COALESCE(
+                    latest_reply.created_at,
+                    support_tickets.last_reply_at,
+                    support_tickets.created_at
+                ) as last_message_at')
             );
 
         if (!empty($filters['search'])) {
