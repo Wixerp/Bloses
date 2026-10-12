@@ -83,7 +83,8 @@ Route::prefix('mobile')->group(function () {
             Route::post('/addresses', [AddressController::class, 'store']);
             Route::put('/addresses/{id}', [AddressController::class, 'update']);
             Route::delete('/addresses/{id}', [AddressController::class, 'destroy']);
-
+            Route::get('/orders/{orderId}/chat', [BuyerSellerChatController::class, 'openBuyerChat']);
+            Route::post('/orders/{orderId}/chat/messages', [BuyerSellerChatController::class, 'buyerSendMessage']);
             Route::get('/wishlist', [WishlistController::class, 'index']);
             Route::post('/wishlist', [WishlistController::class, 'wishlist']);
             Route::post('/review-like', [ProductController::class, 'reviewLike']);

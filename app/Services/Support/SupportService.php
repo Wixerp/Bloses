@@ -214,6 +214,91 @@ class SupportService
             });
     }
 
+    // public function getMyTicketById(int $id): array
+    // {
+    //     $userId = auth()->id();
+
+    //     if (!$userId) {
+    //         abort(401, 'Please login first.');
+    //     }
+
+    //     $ticket = DB::table('support_tickets')
+    //         ->leftJoin('users as buyer', 'buyer.id', '=', 'support_tickets.user_id')
+    //         ->where('support_tickets.id', $id)
+    //         ->where(function ($query) use ($userId) {
+    //             $query->where(function ($q) use ($userId) {
+    //                     $q->where('support_tickets.user_id', $userId)
+    //                     ->where(function ($sub) {
+    //                         $sub->where('support_tickets.conversation_type', 'support')
+    //                             ->orWhereNull('support_tickets.conversation_type');
+    //                     });
+    //                 })->orWhere(function ($q) use ($userId) {
+    //                     $q->where('support_tickets.seller_id', $userId)
+    //                     ->where('support_tickets.conversation_type', 'buyer_seller');
+    //                 });
+    //         })
+    //         ->select(
+    //             'support_tickets.id',
+    //             'support_tickets.user_id',
+    //             'support_tickets.seller_id',
+    //             'support_tickets.conversation_type',
+    //             'support_tickets.subject',
+    //             'support_tickets.message',
+    //             'support_tickets.last_reply_at',
+    //             'support_tickets.image',
+    //             'buyer.name as buyer_name',
+    //         )
+    //         ->first();
+
+    //     abort_if(!$ticket, 404, 'Support ticket not found.');
+
+    //     $ticket->image_url = $ticket->image
+    //         ? Storage::disk('public')->url($ticket->image)
+    //         : null;
+
+    //     $replies = DB::table('support_ticket_replies as r')
+    //         ->leftJoin('users as sender', 'sender.id', '=', 'r.user_id')
+    //         ->where('r.support_ticket_id', $id)
+    //         ->select(
+    //             'r.id',
+    //             'r.support_ticket_id',
+    //             'r.user_id',
+    //             'r.sender_type',
+    //             'r.message',
+    //             'r.image',
+    //             'sender.name as sender_name',
+    //         )
+    //         ->orderBy('r.created_at')
+    //         ->orderBy('r.id')
+    //         ->get()
+    //         ->map(function ($reply) {
+    //             $reply->image_url = $reply->image
+    //                 ? Storage::disk('public')->url($reply->image)
+    //                 : null;
+
+    //             return $reply;
+    //         });
+
+    //     $buyerReplies = $replies
+    //         ->where('sender_type', 'buyer')
+    //         ->values();
+
+    //     $sellerReplies = $replies
+    //         ->where('sender_type', 'seller')
+    //         ->values();
+
+    //     $adminReplies = $replies
+    //         ->where('sender_type', 'admin')
+    //         ->values();
+
+    //     return [
+    //         'ticket' => $ticket,
+    //         'buyer_replies' => $buyerReplies,
+    //         'seller_replies' => $sellerReplies,
+    //         'admin_replies' => $adminReplies,
+    //     ];
+    // }
+
     public function getMyTicketById(int $id): array
     {
         $userId = auth()->id();
@@ -222,24 +307,25 @@ class SupportService
             abort(401, 'Please login first.');
         }
 
+        // Get ticket and verify that the logged-in seller has access
         $ticket = DB::table('support_tickets')
             ->leftJoin('users as buyer', 'buyer.id', '=', 'support_tickets.user_id')
             ->where('support_tickets.id', $id)
             ->where(function ($query) use ($userId) {
-                $query
-                    // Existing admin-support ticket
-                    ->where(function ($q) use ($userId) {
-                        $q->where('support_tickets.user_id', $userId)
+                // Seller's own support ticket
+                $query->where(function ($q) use ($userId) {
+                    $q->where('support_tickets.user_id', $userId)
                         ->where(function ($sub) {
                             $sub->where('support_tickets.conversation_type', 'support')
                                 ->orWhereNull('support_tickets.conversation_type');
                         });
-                    })
-                    // Buyer chat: only this seller can open it
-                    ->orWhere(function ($q) use ($userId) {
-                        $q->where('support_tickets.seller_id', $userId)
+                })
+
+                // Buyer-Seller chat where logged-in user is the seller
+                ->orWhere(function ($q) use ($userId) {
+                    $q->where('support_tickets.seller_id', $userId)
                         ->where('support_tickets.conversation_type', 'buyer_seller');
-                    });
+                });
             })
             ->select(
                 'support_tickets.id',
@@ -250,10 +336,7 @@ class SupportService
                 'support_tickets.message',
                 'support_tickets.last_reply_at',
                 'support_tickets.image',
-                // 'support_tickets.created_at',
-                // 'support_tickets.updated_at',
-                'buyer.name as buyer_name',
-                // 'buyer.email as buyer_email'
+                'buyer.name as buyer_name'
             )
             ->first();
 
@@ -263,6 +346,7 @@ class SupportService
             ? Storage::disk('public')->url($ticket->image)
             : null;
 
+        // Get all ticket replies
         $replies = DB::table('support_ticket_replies as r')
             ->leftJoin('users as sender', 'sender.id', '=', 'r.user_id')
             ->where('r.support_ticket_id', $id)
@@ -273,10 +357,8 @@ class SupportService
                 'r.sender_type',
                 'r.message',
                 'r.image',
-                // 'r.created_at',
-                // 'r.updated_at',
-                'sender.name as sender_name',
-                // 'sender.email as sender_email'
+                'r.created_at',
+                'sender.name as sender_name'
             )
             ->orderBy('r.created_at')
             ->orderBy('r.id')
@@ -289,19 +371,43 @@ class SupportService
                 return $reply;
             });
 
-        $buyerReplies = $replies
-            ->where('sender_type', 'buyer')
-            ->values();
+        // Initialize empty arrays
+        $buyerReplies = collect();
+        $sellerReplies = collect();
+        $adminReplies = collect();
 
-        $sellerReplies = $replies
-            ->where('sender_type', 'seller')
-            ->values();
+        if ($ticket->conversation_type === 'buyer_seller') {
+            // Buyer-Seller chat: buyer and seller replies only
+            $buyerReplies = $replies
+                ->where('sender_type', 'buyer')
+                ->values();
+
+            $sellerReplies = $replies
+                ->where('sender_type', 'seller')
+                ->values();
+
+            // Admin replies remain empty
+            $adminReplies = collect();
+        } else {
+            // Seller support: seller and admin replies only
+            $buyerReplies = collect();
+
+            $sellerReplies = $replies
+                ->where('sender_type', 'seller')
+                ->values();
+
+            $adminReplies = $replies
+                ->where('sender_type', 'admin')
+                ->values();
+        }
 
         return [
             'ticket' => $ticket,
             'buyer_replies' => $buyerReplies,
             'seller_replies' => $sellerReplies,
+            'admin_replies' => $adminReplies,
         ];
     }
+
 
 }
