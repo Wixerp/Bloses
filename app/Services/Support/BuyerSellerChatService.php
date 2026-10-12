@@ -13,27 +13,15 @@ class BuyerSellerChatService
     private function getAuthorizedChat(int $orderId, int $sellerId): array
     {
         $buyerId = auth()->id();
-
         abort_if(!$buyerId, 401, 'Please login first.');
 
-        $order = DB::table('orders')
-            ->where('id', $orderId)
-            ->where('user_id', $buyerId)
-            ->first();
-
+        $order = DB::table('orders')->where('id', $orderId)->where('user_id', $buyerId)->first();
         abort_if(!$order, 404, 'Order not found.');
 
-        $orderHasSeller = DB::table('order_items')
-            ->where('order_id', $orderId)
-            ->where('seller_id', $sellerId)
-            ->exists();
-
+        $orderHasSeller = DB::table('order_items')->where('order_id', $orderId)->where('seller_id', $sellerId)->exists();
         abort_if(!$orderHasSeller, 403, 'Seller does not belong to this order.');
 
-        $seller = DB::table('sellers')
-            ->where('id', $sellerId)
-            ->first();
-
+        $seller = DB::table('sellers')->where('id', $sellerId)->first();
         abort_if(!$seller || !$seller->user_id, 404, 'Seller not found.');
 
         return [(int) $buyerId, (int) $seller->user_id];
@@ -42,37 +30,19 @@ class BuyerSellerChatService
     public function openChat(int $orderId): array
     {
         $buyerId = auth()->id();
-
         abort_if(!$buyerId, 401, 'Please login first.');
 
-        // Verify order belongs to the logged-in buyer
         $order = DB::table('orders')->where('id', $orderId)->where('user_id', $buyerId)->first();
-
         abort_if(!$order, 404, 'Order not found.');
 
-        // Get seller from this order
-        $sellerIds = DB::table('order_items')
-            ->where('order_id', $orderId)
-            ->distinct()
-            ->pluck('seller_id');
+        $sellerIds = DB::table('order_items')->where('order_id', $orderId)->distinct()->pluck('seller_id');
+        abort_if($sellerIds->count() !== 1, 422, 'This order must contain products from exactly one seller.');
 
-        abort_if(
-            $sellerIds->count() !== 1,
-            422,
-            'This order must contain products from exactly one seller.'
-        );
-
-        // order_items.seller_id is sellers.id
-        $seller = DB::table('sellers')
-            ->where('id', $sellerIds->first())
-            ->first();
-
+        $seller = DB::table('sellers')->where('id', $sellerIds->first())->first();
         abort_if(!$seller, 404, 'Seller not found.');
 
-        // support_tickets.seller_id stores sellers.user_id
         $ticket = DB::table('support_tickets')
-            ->where('user_id', $buyerId)
-            ->where('seller_id', $seller->user_id)
+            ->where('user_id', $buyerId)->where('seller_id', $seller->user_id)
             ->where('conversation_type', 'buyer_seller')
             ->where('id', function ($query) use ($orderId) {
                 $query->select('support_tickets.id')
@@ -81,8 +51,7 @@ class BuyerSellerChatService
                     ->where('support_tickets.conversation_type', 'buyer_seller')
                     ->orderByDesc('support_tickets.id')
                     ->limit(1);
-            })
-            ->first();
+            })->first();
 
         if (!$ticket) {
             return [
@@ -101,81 +70,38 @@ class BuyerSellerChatService
     public function sendMessage(int $orderId, array $data): array
     {
         $buyerId = auth()->id();
-
         abort_if(!$buyerId, 401, 'Please login first.');
 
-        // Verify buyer owns this order
-        $order = DB::table('orders')
-            ->where('id', $orderId)
-            ->where('user_id', $buyerId)
-            ->first();
-
+        $order = DB::table('orders')->where('id', $orderId)->where('user_id', $buyerId)->first();
         abort_if(!$order, 404, 'Order not found.');
 
-        // Get seller from order items
-        $sellerIds = DB::table('order_items')
-            ->where('order_id', $orderId)
-            ->whereNotNull('seller_id')
-            ->distinct()
-            ->pluck('seller_id');
-
-        abort_if(
-            $sellerIds->count() !== 1,
-            422,
-            'This order must contain products from exactly one seller.'
-        );
+        $sellerIds = DB::table('order_items')->where('order_id', $orderId)->whereNotNull('seller_id')->distinct()->pluck('seller_id');
+        abort_if($sellerIds->count() !== 1, 422, 'This order must contain products from exactly one seller.');
 
         $sellerId = (int) $sellerIds->first();
-
-        $seller = DB::table('sellers')
-            ->where('id', $sellerId)
-            ->first();
-
+        $seller = DB::table('sellers')->where('id', $sellerId)->first();
         abort_if(!$seller || !$seller->user_id, 404, 'Seller not found.');
 
         $sellerUserId = (int) $seller->user_id;
-
-        // Validate message/image
         $message = trim($data['message'] ?? '');
         $image = $data['image'] ?? null;
+        abort_if($message === '' && !($image instanceof UploadedFile), 422, 'Message or image is required.');
 
-        abort_if(
-            $message === '' && !($image instanceof UploadedFile),
-            422,
-            'Message or image is required.'
-        );
-
-        // Upload image if provided
         $imagePath = null;
 
         if ($image instanceof UploadedFile) {
             $imagePath = $image->store('buyer-seller-chat', 'public');
-
-            abort_if(
-                !$imagePath,
-                500,
-                'Unable to upload chat image.'
-            );
+            abort_if(!$imagePath, 500, 'Unable to upload chat image.');
         }
 
         try {
-            $result = DB::transaction(function () use (
-                $buyerId,
-                $sellerUserId,
-                $message,
-                $imagePath
-            ) {
+            $result = DB::transaction(function () use ($buyerId, $sellerUserId, $message, $imagePath)
+            {
                 $now = now();
 
-                // Find existing conversation
-                $ticket = DB::table('support_tickets')
-                    ->where('user_id', $buyerId)
-                    ->where('seller_id', $sellerUserId)
-                    ->where('conversation_type', 'buyer_seller')
-                    ->lockForUpdate()
-                    ->first();
+                $ticket = DB::table('support_tickets')->where('user_id', $buyerId)->where('seller_id', $sellerUserId)
+                    ->where('conversation_type', 'buyer_seller')->lockForUpdate()->first();
 
-                // Create conversation if it does not exist
                 if (!$ticket) {
                     $ticketId = DB::table('support_tickets')
                         ->insertGetId([
@@ -185,11 +111,7 @@ class BuyerSellerChatService
                             'subject' => 'Buyer-Seller Chat',
                             'message' => $message,
                             'image' => $imagePath,
-
-                            // Set a valid status ID here if your database
-                            // does not allow NULL for status_id.
                             'status_id' => null,
-
                             'last_reply_at' => $now,
                             'created_at' => $now,
                             'updated_at' => $now,
@@ -197,8 +119,7 @@ class BuyerSellerChatService
                 } else {
                     $ticketId = (int) $ticket->id;
 
-                    DB::table('support_tickets')
-                        ->where('id', $ticketId)
+                    DB::table('support_tickets')->where('id', $ticketId)
                         ->update([
                             'message' => $message,
                             'image' => $imagePath,
@@ -207,7 +128,6 @@ class BuyerSellerChatService
                         ]);
                 }
 
-                // Save buyer message
                 $replyId = DB::table('support_ticket_replies')
                     ->insertGetId([
                         'support_ticket_id' => $ticketId,
@@ -232,29 +152,21 @@ class BuyerSellerChatService
             if ($imagePath) {
                 Storage::disk('public')->delete($imagePath);
             }
-
             throw $e;
         }
 
-        // Prepare response
         $reply = [
             'id' => $result['reply_id'],
             'support_ticket_id' => $result['ticket_id'],
             'user_id' => $result['user_id'],
             'sender_type' => 'buyer',
             'message' => $result['message'],
-            'image_url' => $result['image_path']
-                ? Storage::disk('public')->url($result['image_path'])
-                : null,
+            'image_url' => $result['image_path'] ? Storage::disk('public')->url($result['image_path']) : null,
             'created_at' => $result['created_at']->toISOString(),
         ];
 
-        // Broadcast message after it has been saved
-        event(new ChatMessageSent(
-            $result['ticket_id'],
-            $reply
-        ));
-        
+        event(new ChatMessageSent($result['ticket_id'], $reply));
+
         return [
             'success' => true,
             'message' => 'Message sent successfully.',
