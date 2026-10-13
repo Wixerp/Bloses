@@ -15,11 +15,6 @@ class ProductService
         $sellerId = auth()->id();
         $storeIds = DB::table('seller_store_settings')->where('seller_id', $sellerId)->pluck('id');
 
-        // Log::info('Seller Products - Debug', [
-        //     'auth_id' => $sellerId,
-        //     'store_ids' => $storeIds->toArray(),
-        // ]);
-
         $products = DB::table('products')
             ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
             ->leftJoin('master_types as status','status.id','=','products.status_id')
@@ -30,15 +25,7 @@ class ProductService
                 DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
                 DB::raw("(SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
                         WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image")
-            )->orderByDesc('products.id')->paginate($perPage);
-
-        // Log::info('Seller Products - Result', [
-        //     'auth_id' => $sellerId,
-        //     'total_products' => $products->total(),
-        //     'product_ids' => $products->getCollection()
-        //         ->pluck('id')
-        //         ->toArray(),
-        // ]);
+            )->orderByDesc('products.id')->get();
 
         return $products;
     }

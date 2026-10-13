@@ -23,10 +23,10 @@ class ProductController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = min(
-            max((int) $request->input('per_page', 15), 1),
-            100
-        );
+        // $perPage = min(
+        //     max((int) $request->input('per_page', 15), 1),
+        //     100
+        // );
 
         $products = $this->productService->getAll($perPage);
 
@@ -40,7 +40,7 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request): JsonResponse
     {
 
-        
+
         $product = $this->productService->create(
             $request->validated()
         );
