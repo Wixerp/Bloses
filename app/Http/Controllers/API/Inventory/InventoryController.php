@@ -27,17 +27,23 @@ class InventoryController extends Controller
         ]);
     }
 
-    public function update(Request $request, int $productId): JsonResponse {
 
+    public function update(Request $request, int $productId): JsonResponse
+    {
         $data = $request->validate([
-            'qty' => ['required','integer','min:0',],
-            'variant_id' => ['nullable','integer','exists:product_variants,id',],
+            'qty' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'variant_id' => ['sometimes', 'nullable', 'integer', 'exists:product_variants,id'],
+            'supplier_id' => ['sometimes', 'nullable', 'integer', 'exists:suppliers,id'],
         ]);
 
         $inventory = $this->inventoryService->update(
             $productId,
-            (int) $data['qty'],
-            isset($data['variant_id']) ? (int) $data['variant_id'] : null
+            array_key_exists('qty', $data) ? $data['qty'] : null,
+            array_key_exists('variant_id', $data) ? $data['variant_id'] : null,
+            array_key_exists('supplier_id', $data) ? $data['supplier_id'] : null,
+            array_key_exists('qty', $data),
+            array_key_exists('variant_id', $data),
+            array_key_exists('supplier_id', $data),
         );
 
         return response()->json([
@@ -46,4 +52,5 @@ class InventoryController extends Controller
             'data' => $inventory,
         ]);
     }
+
 }

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\Buyer\AuthController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
+use App\Http\Controllers\Api\Categories\BuyerCategoryController;
 use App\Http\Controllers\Api\Admin\ProductsController;
 use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Buyer\AddressController;
@@ -49,5 +50,8 @@ Route::prefix('buyer')->group(function () {
     Route::get('/products/{productId}', [ProductController::class, 'getProduct']);
     Route::post('/products/{productId}/questions', [ProductController::class, 'storeQuestions']);
     Route::get('/products', [ProductController::class, 'buyerProducts']);
+
+    Route::get('/menu-departments', [BuyerCategoryController::class, 'departments']);
+    Route::get('/menu-categories', [BuyerCategoryController::class, 'categories']);
 
 });

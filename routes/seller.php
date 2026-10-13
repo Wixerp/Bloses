@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Order\OrderController;
+use App\Http\Controllers\Api\Suppliers\SuppliersController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
 use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Support\SupportController;
@@ -55,10 +56,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::get('/support', [SupportController::class, 'myTickets']);
-        // Route::post('/support', [SupportController::class, 'store']);
-        // Route::post('/support/{id?}', [SupportController::class, 'store']);
         Route::post('/support/{id?}', [SupportController::class, 'store']);
         Route::get('/support/{id}', [SupportController::class, 'myTicketDetail']);
+
+        Route::get('/suppliers', [SuppliersController::class, 'index']);
+        Route::post('/suppliers', [SuppliersController::class, 'store']);
+        Route::get('/suppliers/{id}', [SuppliersController::class, 'show']);
+        Route::put('/suppliers/{id}', [SuppliersController::class, 'update']);
+        Route::patch('/suppliers/{id}', [SuppliersController::class, 'update']);
+        Route::delete('/suppliers/{id}', [SuppliersController::class, 'destroy']);
 
         Route::get('/dashboard', [SellerDashboardController::class, 'index']);
     });

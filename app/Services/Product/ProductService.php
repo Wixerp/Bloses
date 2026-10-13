@@ -11,72 +11,37 @@ use Illuminate\Support\Str;
 class ProductService
 {
     public function getAll(int $perPage = 15): LengthAwarePaginator
-{
-    $sellerId = auth()->id();
+    {
+        $sellerId = auth()->id();
+        $storeIds = DB::table('seller_store_settings')->where('seller_id', $sellerId)->pluck('id');
 
-    $storeIds = DB::table('seller_store_settings')
-        ->where('seller_id', $sellerId)
-        ->pluck('id');
+        // Log::info('Seller Products - Debug', [
+        //     'auth_id' => $sellerId,
+        //     'store_ids' => $storeIds->toArray(),
+        // ]);
 
-    Log::info('Seller Products - Debug', [
-        'auth_id' => $sellerId,
-        'store_ids' => $storeIds->toArray(),
-    ]);
+        $products = DB::table('products')
+            ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
+            ->leftJoin('master_types as status','status.id','=','products.status_id')
+            ->where('seller_store_settings.seller_id', $sellerId)
+            ->select(
+                'products.id','products.product_code','products.name','seller_store_settings.store_name as store_name',
+                'status.description as status','products.is_featured','products.is_active','products.published_at',
+                DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
+                DB::raw("(SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
+                        WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image")
+            )->orderByDesc('products.id')->paginate($perPage);
 
-    $products = DB::table('products')
-        ->leftJoin(
-            'seller_store_settings',
-            'seller_store_settings.id',
-            '=',
-            'products.store_id'
-        )
-        ->leftJoin(
-            'master_types as status',
-            'status.id',
-            '=',
-            'products.status_id'
-        )
-        ->where('seller_store_settings.seller_id', $sellerId)
-        ->select(
-            'products.id',
-            'products.product_code',
-            'products.name',
-            'seller_store_settings.store_name as store_name',
-            'status.description as status',
-            'products.is_featured',
-            'products.is_active',
-            'products.published_at',
-            DB::raw("
-                CASE
-                    WHEN products.brand IS NOT NULL
-                         AND products.brand != ''
-                    THEN products.brand
-                    ELSE 'No Brand'
-                END AS brand
-            "),
-            DB::raw("
-                (
-                    SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path)
-                    FROM product_images pi
-                    WHERE pi.product_id = products.id
-                    ORDER BY pi.is_primary DESC, pi.sort_order ASC
-                    LIMIT 1
-                ) AS image
-            ")
-        )
-        ->orderByDesc('products.id')
-        ->paginate($perPage);
+        // Log::info('Seller Products - Result', [
+        //     'auth_id' => $sellerId,
+        //     'total_products' => $products->total(),
+        //     'product_ids' => $products->getCollection()
+        //         ->pluck('id')
+        //         ->toArray(),
+        // ]);
 
-    Log::info('Seller Products - Result', [
-        'auth_id' => $sellerId,
-        'total_products' => $products->total(),
-        'product_ids' => $products->getCollection()
-            ->pluck('id')
-            ->toArray(),
-    ]);
-
-    return $products;
-}
+        return $products;
+    }
 
     public function findById(int $id): object
     {
@@ -200,6 +165,7 @@ class ProductService
                 'product_code' => $data['product_code'] ?? null,
                 'model_number' => $data['model_number'] ?? null,
                 'manufacturer' => $data['manufacturer'] ?? null,
+                'brand' => $data['brand'] ?? null,
                 'status_id' => $data['status_id'] ?? null,
                 'is_featured' => $data['is_featured'] ?? false,
                 'is_deal' => $data['is_deal'] ?? false,
@@ -344,217 +310,224 @@ class ProductService
             }
 
             $product->update([
-                'store_id' => $data['store_id'] ?? $product->store_id,
-                'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $product->category_id,
-                'brand_id' => array_key_exists('brand_id', $data) ? $data['brand_id'] : $product->brand_id,
-                'name' => $data['name'] ?? $product->name,
-                'slug' => $data['slug'] ?? $product->slug,
-                'price' => $data['price'] ?? $product->price,
-                'discount' => array_key_exists('discount', $data) ? $data['discount'] : $product->discount,
+                'store_id'            => $data['store_id'] ?? $product->store_id,
+                'category_id'         => array_key_exists('category_id', $data) ? $data['category_id'] : $product->category_id,
+                'brand_id'            => array_key_exists('brand_id', $data) ? $data['brand_id'] : $product->brand_id,
+                'name'                => $data['name'] ?? $product->name,
+                'slug'                => $data['slug'] ?? $product->slug,
+                'price'               => $data['price'] ?? $product->price,
+                'discount_price'      => array_key_exists('discount_price', $data) ? $data['discount_price'] : $product->discount_price,
                 'discount_percentage' => array_key_exists('discount_percentage', $data) ? $data['discount_percentage'] : $product->discount_percentage,
-                'tax' => array_key_exists('tax', $data) ? $data['tax'] : $product->tax,
-                'qty' => array_key_exists('qty', $data) ? $data['qty'] : $product->qty,
-                'return_days' => array_key_exists('return_days', $data) ? $data['return_days'] : $product->return_days,
-                'returnable' => array_key_exists('returnable', $data) ? $data['returnable'] : $product->returnable,
-                'is_flash_sale' => array_key_exists('is_flash_sale', $data) ? $data['is_flash_sale'] : $product->is_flash_sale,
+                'tax'                 => array_key_exists('tax', $data) ? $data['tax'] : $product->tax,
+                'stock_qty'           => array_key_exists('stock_qty', $data) ? $data['stock_qty'] : $product->stock_qty,
+                'return_days'         => array_key_exists('return_days', $data) ? $data['return_days'] : $product->return_days,
+                'returnable'          => array_key_exists('returnable', $data) ? $data['returnable'] : $product->returnable,
+                'is_flash_sale'       => array_key_exists('is_flash_sale', $data) ? $data['is_flash_sale'] : $product->is_flash_sale,
                 'low_stock_threshold' => array_key_exists('low_stock_threshold', $data) ? $data['low_stock_threshold'] : $product->low_stock_threshold,
-                'short_description' => array_key_exists('short_description', $data) ? $data['short_description'] : $product->short_description,
-                'description' => array_key_exists('description', $data) ? $data['description'] : $product->description,
-                'product_code' => array_key_exists('product_code', $data) ? $data['product_code'] : $product->product_code,
-                'model_number' => array_key_exists('model_number', $data) ? $data['model_number'] : $product->model_number,
-                'manufacturer' => array_key_exists('manufacturer', $data) ? $data['manufacturer'] : $product->manufacturer,
-                'status_id' => $data['status_id'] ?? $product->status_id,
-                'is_featured' => $data['is_featured'] ?? $product->is_featured,
-                'is_deal' => $data['is_deal'] ?? $product->is_deal,
-                'deal_start_at' => array_key_exists('deal_start_at', $data) ? $data['deal_start_at'] : $product->deal_start_at,
-                'deal_end_at' => array_key_exists('deal_end_at', $data) ? $data['deal_end_at'] : $product->deal_end_at,
-                'is_active' => $data['is_active'] ?? $product->is_active,
-                'sort_order' => $data['sort_order'] ?? $product->sort_order,
-                'published_at' => array_key_exists('published_at', $data) ? $data['published_at'] : $product->published_at,
-                'updated_at' => now(),
+                'short_description'   => array_key_exists('short_description', $data) ? $data['short_description'] : $product->short_description,
+                'description'         => array_key_exists('description', $data) ? $data['description'] : $product->description,
+                'product_code'        => array_key_exists('product_code', $data) ? $data['product_code'] : $product->product_code,
+                'model_number'        => array_key_exists('model_number', $data) ? $data['model_number'] : $product->model_number,
+                'manufacturer'        => array_key_exists('manufacturer', $data) ? $data['manufacturer'] : $product->manufacturer,
+                'status_id'           => $data['status_id'] ?? $product->status_id,
+                'is_featured'         => $data['is_featured'] ?? $product->is_featured,
+                'is_deal'             => $data['is_deal'] ?? $product->is_deal,
+                'brand'               => $data['brand'] ?? $product->brand,
+                'deal_start_at'       => array_key_exists('deal_start_at', $data) ? $data['deal_start_at'] : $product->deal_start_at,
+                'deal_end_at'         => array_key_exists('deal_end_at', $data) ? $data['deal_end_at'] : $product->deal_end_at,
+                'is_active'           => $data['is_active'] ?? $product->is_active,
+                'sort_order'          => $data['sort_order'] ?? $product->sort_order,
+                'published_at'        => array_key_exists('published_at', $data) ? $data['published_at'] : $product->published_at,
+                'updated_at'          => now(),
             ]);
 
-            // if (array_key_exists('variants', $data)) {
-            //     foreach ($data['variants'] as $variant) {
-            //         $variantId = null;
-            //         if (!empty($variant['id'])) {
-            //             $variantModel = DB::table('product_variants')->where('id', $variant['id'])->where('product_id', $product->id)->first();
-            //             if ($variantModel) {
-            //                 DB::table('product_variants')->where('id', $variant['id'])->where('product_id', $product->id)
-            //                     ->update([
-            //                         'name' => array_key_exists('name', $variant) ? $variant['name'] : $variantModel->name,
-            //                         'sku' => array_key_exists('sku', $variant) ? $variant['sku'] : $variantModel->sku,
-            //                         'barcode' => array_key_exists('barcode', $variant) ? $variant['barcode'] : $variantModel->barcode,
-            //                         'price' => array_key_exists('price', $variant) ? $variant['price'] : $variantModel->price,
-            //                         'compare_at_price' => array_key_exists('compare_at_price', $variant) ? $variant['compare_at_price'] : $variantModel->compare_at_price,
-            //                         'cost_price' => array_key_exists('cost_price', $variant) ? $variant['cost_price'] : $variantModel->cost_price,
-            //                         'stock_qty' => array_key_exists('stock_qty', $variant) ? $variant['stock_qty'] : $variantModel->stock_qty,
-            //                         'weight' => array_key_exists('weight', $variant) ? $variant['weight'] : $variantModel->weight,
-            //                         'length' => array_key_exists('length', $variant) ? $variant['length'] : $variantModel->length,
-            //                         'width' => array_key_exists('width', $variant) ? $variant['width'] : $variantModel->width,
-            //                         'height' => array_key_exists('height', $variant) ? $variant['height'] : $variantModel->height,
-            //                         'manage_stock' => array_key_exists('manage_stock', $variant) ? $variant['manage_stock'] : $variantModel->manage_stock,
-            //                         'is_active' => array_key_exists('is_active', $variant) ? $variant['is_active'] : $variantModel->is_active,
-            //                         'is_default' => array_key_exists('is_default', $variant) ? $variant['is_default'] : $variantModel->is_default,
-            //                         'updated_at' => now(),
-            //                     ]);
+            // ---------- Variants Handling (null fully allowed) ----------
+            if (array_key_exists('variants', $data)) {
 
-            //                 $variantId = $variantModel->id;
-            //             }
-            //         }
+                // Agar null aaya ya empty array aaya → saare variants delete kar do (default bhi)
+                if (is_null($data['variants']) || (is_array($data['variants']) && empty($data['variants']))) {
 
-            //         if (!$variantId) {
-            //             $variantId = DB::table('product_variants')->insertGetId([
-            //                     'product_id' => $product->id,
-            //                     'name' => $variant['name'] ?? null,
-            //                     'sku' => $variant['sku'] ?? null,
-            //                     'barcode' => $variant['barcode'] ?? null,
-            //                     'price' => $variant['price'] ?? 0,
-            //                     'compare_at_price' => $variant['compare_at_price'] ?? null,
-            //                     'cost_price' => $variant['cost_price'] ?? null,
-            //                     'stock_qty' => $variant['stock_qty'] ?? 0,
-            //                     'weight' => $variant['weight'] ?? null,
-            //                     'length' => $variant['length'] ?? null,
-            //                     'width' => $variant['width'] ?? null,
-            //                     'height' => $variant['height'] ?? null,
-            //                     'manage_stock' => $variant['manage_stock'] ?? false,
-            //                     'is_active' => $variant['is_active'] ?? true,
-            //                     'is_default' => $variant['is_default'] ?? false,
-            //                     'created_at' => now(),
-            //                     'updated_at' => now(),
-            //                 ]);
-            //         }
+                    $variantIds = DB::table('product_variants')
+                        ->where('product_id', $product->id)
+                        ->pluck('id');
 
-            //         if (array_key_exists('attributes', $variant)) {
-
-            //             DB::table('product_variant_attribute_values')
-            //                 ->where('product_variant_id', $variantId)
-            //                 ->delete();
-
-            //             foreach ($variant['attributes'] ?? [] as $attribute) {
-
-            //                 DB::table(
-            //                     'product_variant_attribute_values'
-            //                 )->insert([
-
-            //                     'product_variant_id' => $variantId,
-
-            //                     'attribute_id' =>
-            //                         $attribute['attribute_id'],
-
-            //                     'attribute_value_id' =>
-            //                         $attribute['attribute_value_id'],
-
-            //                     'created_at' => now(),
-
-            //                     'updated_at' => now(),
-            //                 ]);
-            //             }
-            //         }
-            //     }
-            // }
-            if (array_key_exists('variants', $data) && is_array($data['variants'])) {
-                foreach ($data['variants'] as $variant) {
-
-                    $variantId = null;
-
-                    // 1. Try by explicit ID (most reliable)
-                    if (!empty($variant['id'])) {
-                        $existing = DB::table('product_variants')
-                            ->where('id', $variant['id'])
-                            ->where('product_id', $product->id)
-                            ->first();
-
-                        if ($existing) {
-                            $variantId = $existing->id;
-                        }
+                    if ($variantIds->isNotEmpty()) {
+                        DB::table('product_variant_attribute_values')
+                            ->whereIn('product_variant_id', $variantIds)
+                            ->delete();
                     }
 
-                    // 2. Fallback: find by SKU belonging to this product
-                    //    (prevents duplicate-key error when frontend forgets to send id)
-                    if (!$variantId && !empty($variant['sku'])) {
-                        $existing = DB::table('product_variants')
-                            ->where('product_id', $product->id)
-                            ->where('sku', $variant['sku'])
-                            ->first();
+                    DB::table('product_variants')
+                        ->where('product_id', $product->id)
+                        ->delete();
+                }
+                // Agar variants array mein data hai to normal update/create
+                elseif (is_array($data['variants'])) {
 
-                        if ($existing) {
-                            $variantId = $existing->id;
+                    foreach ($data['variants'] as $variant) {
+
+                        $variantId = null;
+
+                        // Pehle id se check
+                        if (!empty($variant['id'])) {
+                            $existing = DB::table('product_variants')
+                                ->where('id', $variant['id'])
+                                ->where('product_id', $product->id)
+                                ->first();
+
+                            if ($existing) {
+                                $variantId = $existing->id;
+                            }
                         }
-                    }
 
-                    // ---------- UPDATE existing ----------
-                    if ($variantId) {
-                        DB::table('product_variants')
-                            ->where('id', $variantId)
-                            ->where('product_id', $product->id)
-                            ->update([
-                                'name'             => array_key_exists('name', $variant) ? $variant['name'] : DB::raw('name'),
-                                'sku'              => array_key_exists('sku', $variant) ? $variant['sku'] : DB::raw('sku'),
-                                'barcode'          => array_key_exists('barcode', $variant) ? $variant['barcode'] : DB::raw('barcode'),
-                                'price'            => array_key_exists('price', $variant) ? $variant['price'] : DB::raw('price'),
-                                'compare_at_price' => array_key_exists('compare_at_price', $variant) ? $variant['compare_at_price'] : DB::raw('compare_at_price'),
-                                'cost_price'       => array_key_exists('cost_price', $variant) ? $variant['cost_price'] : DB::raw('cost_price'),
-                                'stock_qty'        => array_key_exists('stock_qty', $variant) ? $variant['stock_qty'] : DB::raw('stock_qty'), // match your column
-                                'weight'           => array_key_exists('weight', $variant) ? $variant['weight'] : DB::raw('weight'),
-                                'length'           => array_key_exists('length', $variant) ? $variant['length'] : DB::raw('length'),
-                                'width'            => array_key_exists('width', $variant) ? $variant['width'] : DB::raw('width'),
-                                'height'           => array_key_exists('height', $variant) ? $variant['height'] : DB::raw('height'),
-                                'manage_stock'     => array_key_exists('manage_stock', $variant) ? $variant['manage_stock'] : DB::raw('manage_stock'),
-                                'is_active'        => array_key_exists('is_active', $variant) ? $variant['is_active'] : DB::raw('is_active'),
-                                'is_default'       => array_key_exists('is_default', $variant) ? $variant['is_default'] : DB::raw('is_default'),
+                        // Agar id nahi mili to SKU se check
+                        if (!$variantId && !empty($variant['sku'])) {
+                            $existing = DB::table('product_variants')
+                                ->where('product_id', $product->id)
+                                ->where('sku', $variant['sku'])
+                                ->first();
+
+                            if ($existing) {
+                                $variantId = $existing->id;
+                            }
+                        }
+
+                        // ---------- UPDATE existing ----------
+                        if ($variantId) {
+                            DB::table('product_variants')
+                                ->where('id', $variantId)
+                                ->where('product_id', $product->id)
+                                ->update([
+                                    'name'             => array_key_exists('name', $variant) ? $variant['name'] : DB::raw('name'),
+                                    'sku'              => array_key_exists('sku', $variant) ? $variant['sku'] : DB::raw('sku'),
+                                    'barcode'          => array_key_exists('barcode', $variant) ? $variant['barcode'] : DB::raw('barcode'),
+                                    'price'            => array_key_exists('price', $variant) ? $variant['price'] : DB::raw('price'),
+                                    'compare_at_price' => array_key_exists('compare_at_price', $variant) ? $variant['compare_at_price'] : DB::raw('compare_at_price'),
+                                    'cost_price'       => array_key_exists('cost_price', $variant) ? $variant['cost_price'] : DB::raw('cost_price'),
+                                    'stock_qty'        => array_key_exists('stock_qty', $variant) ? $variant['stock_qty'] : DB::raw('stock_qty'),
+                                    'weight'           => array_key_exists('weight', $variant) ? $variant['weight'] : DB::raw('weight'),
+                                    'length'           => array_key_exists('length', $variant) ? $variant['length'] : DB::raw('length'),
+                                    'width'            => array_key_exists('width', $variant) ? $variant['width'] : DB::raw('width'),
+                                    'height'           => array_key_exists('height', $variant) ? $variant['height'] : DB::raw('height'),
+                                    'manage_stock'     => array_key_exists('manage_stock', $variant) ? $variant['manage_stock'] : DB::raw('manage_stock'),
+                                    'is_active'        => array_key_exists('is_active', $variant) ? $variant['is_active'] : DB::raw('is_active'),
+                                    'is_default'       => array_key_exists('is_default', $variant) ? $variant['is_default'] : DB::raw('is_default'),
+                                    'updated_at'       => now(),
+                                ]);
+                        }
+                        // ---------- CREATE new ----------
+                        else {
+                            if (!empty($variant['sku'])) {
+                                $skuExists = DB::table('product_variants')
+                                    ->where('sku', $variant['sku'])
+                                    ->exists();
+
+                                if ($skuExists) {
+                                    throw new \Exception("SKU '{$variant['sku']}' is already used by another variant.");
+                                }
+                            }
+
+                            $variantId = DB::table('product_variants')->insertGetId([
+                                'product_id'       => $product->id,
+                                'name'             => $variant['name'] ?? null,
+                                'sku'              => $variant['sku'] ?? null,
+                                'barcode'          => $variant['barcode'] ?? null,
+                                'price'            => $variant['price'] ?? 0,
+                                'compare_at_price' => $variant['compare_at_price'] ?? null,
+                                'cost_price'       => $variant['cost_price'] ?? null,
+                                'stock_qty'        => $variant['stock_qty'] ?? 0,
+                                'weight'           => $variant['weight'] ?? null,
+                                'length'           => $variant['length'] ?? null,
+                                'width'            => $variant['width'] ?? null,
+                                'height'           => $variant['height'] ?? null,
+                                'manage_stock'     => $variant['manage_stock'] ?? false,
+                                'is_active'        => $variant['is_active'] ?? true,
+                                'is_default'       => $variant['is_default'] ?? false,
+                                'created_at'       => now(),
                                 'updated_at'       => now(),
                             ]);
-                    }
-                    // ---------- CREATE new ----------
-                    else {
-                        // Extra safety: if SKU already exists globally, throw a clean error
-                        if (!empty($variant['sku'])) {
-                            $skuExists = DB::table('product_variants')
-                                ->where('sku', $variant['sku'])
-                                ->exists();
-
-                            if ($skuExists) {
-                                throw new \Exception("SKU '{$variant['sku']}' is already used by another variant.");
-                            }
                         }
 
-                        $variantId = DB::table('product_variants')->insertGetId([
-                            'product_id'       => $product->id,
-                            'name'             => $variant['name'] ?? null,
-                            'sku'              => $variant['sku'] ?? null,
-                            'barcode'          => $variant['barcode'] ?? null,
-                            'price'            => $variant['price'] ?? 0,
-                            'compare_at_price' => $variant['compare_at_price'] ?? null,
-                            'cost_price'       => $variant['cost_price'] ?? null,
-                            'stock_qty'        => $variant['stock_qty'] ?? 0,   // match your column name
-                            'weight'           => $variant['weight'] ?? null,
-                            'length'           => $variant['length'] ?? null,
-                            'width'            => $variant['width'] ?? null,
-                            'height'           => $variant['height'] ?? null,
-                            'manage_stock'     => $variant['manage_stock'] ?? false,
-                            'is_active'        => $variant['is_active'] ?? true,
-                            'is_default'       => $variant['is_default'] ?? false,
-                            'created_at'       => now(),
-                            'updated_at'       => now(),
+                        // Attributes
+                        if (array_key_exists('attributes', $variant)) {
+                            DB::table('product_variant_attribute_values')
+                                ->where('product_variant_id', $variantId)
+                                ->delete();
+
+                            foreach ($variant['attributes'] ?? [] as $attr) {
+                                if (empty($attr['attribute_id']) || empty($attr['attribute_value_id'])) {
+                                    continue;
+                                }
+
+                                DB::table('product_variant_attribute_values')->insert([
+                                    'product_variant_id' => $variantId,
+                                    'attribute_id'       => $attr['attribute_id'],
+                                    'attribute_value_id' => $attr['attribute_value_id'],
+                                    'created_at'         => now(),
+                                    'updated_at'         => now(),
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Questions
+            if (array_key_exists('questions', $data)) {
+                DB::table('product_questions')
+                    ->where('product_id', $product->id)
+                    ->delete();
+
+                foreach ($data['questions'] ?? [] as $question) {
+                    DB::table('product_questions')->insert([
+                        'product_id'  => $product->id,
+                        'user_id'     => $question['user_id'] ?? null,
+                        'seller_id'   => $question['seller_id'] ?? null,
+                        'question'    => $question['question'],
+                        'answer'      => $question['answer'] ?? null,
+                        'answered_at' => $question['answered_at'] ?? null,
+                        'is_approved' => $question['is_approved'] ?? false,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                }
+            }
+
+            // New Images
+            if (!empty($data['images'])) {
+                foreach ($data['images'] as $index => $image) {
+
+                    if ($image instanceof \Illuminate\Http\UploadedFile) {
+                        $imagePath = $image->store('products', 'public');
+
+                        DB::table('product_images')->insert([
+                            'product_id'         => $product->id,
+                            'product_variant_id' => null,
+                            'image_path'         => $imagePath,
+                            'alt_text'           => null,
+                            'sort_order'         => $index,
+                            'is_primary'         => $index === 0,
+                            'created_at'         => now(),
+                            'updated_at'         => now(),
                         ]);
+                        continue;
                     }
 
-                    // Attributes (same as before)
-                    if (array_key_exists('attributes', $variant)) {
-                        DB::table('product_variant_attribute_values')
-                            ->where('product_variant_id', $variantId)
-                            ->delete();
+                    if (is_array($image)) {
+                        $imagePath = $image['image_path'] ?? null;
 
-                        foreach ($variant['attributes'] ?? [] as $attr) {
-                            if (empty($attr['attribute_id']) || empty($attr['attribute_value_id'])) {
-                                continue;
-                            }
+                        if (isset($image['file']) && $image['file'] instanceof \Illuminate\Http\UploadedFile) {
+                            $imagePath = $image['file']->store('products', 'public');
+                        }
 
-                            DB::table('product_variant_attribute_values')->insert([
-                                'product_variant_id' => $variantId,
-                                'attribute_id'       => $attr['attribute_id'],
-                                'attribute_value_id' => $attr['attribute_value_id'],
+                        if ($imagePath) {
+                            DB::table('product_images')->insert([
+                                'product_id'         => $product->id,
+                                'product_variant_id' => $image['product_variant_id'] ?? null,
+                                'image_path'         => $imagePath,
+                                'alt_text'           => $image['alt_text'] ?? null,
+                                'sort_order'         => $image['sort_order'] ?? $index,
+                                'is_primary'         => $image['is_primary'] ?? ($index === 0),
                                 'created_at'         => now(),
                                 'updated_at'         => now(),
                             ]);
@@ -563,143 +536,8 @@ class ProductService
                 }
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Product Questions
-            |--------------------------------------------------------------------------
-            */
-
-            if (array_key_exists('questions', $data)) {
-
-                DB::table('product_questions')
-                    ->where('product_id', $product->id)
-                    ->delete();
-
-                foreach ($data['questions'] ?? [] as $question) {
-
-                    DB::table('product_questions')->insert([
-
-                        'product_id' => $product->id,
-
-                        'user_id' =>
-                            $question['user_id'] ?? null,
-
-                        'seller_id' =>
-                            $question['seller_id'] ?? null,
-
-                        'question' =>
-                            $question['question'],
-
-                        'answer' =>
-                            $question['answer'] ?? null,
-
-                        'answered_at' =>
-                            $question['answered_at'] ?? null,
-
-                        'is_approved' =>
-                            $question['is_approved'] ?? false,
-
-                        'created_at' => now(),
-
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | New Product Images
-            |--------------------------------------------------------------------------
-            */
-
-            if (!empty($data['images'])) {
-
-                foreach ($data['images'] as $index => $image) {
-
-                    if ($image instanceof UploadedFile) {
-
-                        $imagePath = $image->store(
-                            'products',
-                            'public'
-                        );
-
-                        DB::table('product_images')->insert([
-
-                            'product_id' => $product->id,
-
-                            'product_variant_id' => null,
-
-                            'image_path' => $imagePath,
-
-                            'alt_text' => null,
-
-                            'sort_order' => $index,
-
-                            'is_primary' => $index === 0,
-
-                            'created_at' => now(),
-
-                            'updated_at' => now(),
-                        ]);
-
-                        continue;
-                    }
-
-                    if (is_array($image)) {
-
-                        $imagePath =
-                            $image['image_path'] ?? null;
-
-                        if (
-                            isset($image['file']) &&
-                            $image['file'] instanceof UploadedFile
-                        ) {
-
-                            $imagePath = $image['file']->store(
-                                'products',
-                                'public'
-                            );
-                        }
-
-                        if ($imagePath) {
-
-                            DB::table('product_images')->insert([
-
-                                'product_id' => $product->id,
-
-                                'product_variant_id' =>
-                                    $image['product_variant_id'] ?? null,
-
-                                'image_path' =>
-                                    $imagePath,
-
-                                'alt_text' =>
-                                    $image['alt_text'] ?? null,
-
-                                'sort_order' =>
-                                    $image['sort_order'] ?? $index,
-
-                                'is_primary' =>
-                                    $image['is_primary'] ??
-                                    ($index === 0),
-
-                                'created_at' => now(),
-
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Remove Product Images
-            |--------------------------------------------------------------------------
-            */
-
+            // Remove Images
             if (!empty($data['remove_image_ids'])) {
-
                 DB::table('product_images')
                     ->where('product_id', $product->id)
                     ->whereIn('id', $data['remove_image_ids'])

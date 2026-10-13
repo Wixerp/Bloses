@@ -44,6 +44,7 @@ class StoreProductRequest extends FormRequest
             'product_code'          => ['nullable', 'string', 'max:100', Rule::unique('products', 'product_code')],
             'model_number'          => ['nullable', 'string', 'max:100'],
             'manufacturer'          => ['nullable', 'string', 'max:255'],
+            'brand'                 => ['nullable', 'string', 'max:255'],
             'status_id'             => ['required', 'integer'],
             'returnable'            => ['nullable', 'boolean'],
             'is_flash_sale'         => ['nullable', 'boolean'],

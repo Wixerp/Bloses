@@ -16,6 +16,7 @@ class ProductResource extends JsonResource
 
             'description' => $this->description,
             'short_description' => $this->short_description,
+            'brand' => $this->brand,
 
             'store' => $this->whenLoaded('store', function () {
                 return [
