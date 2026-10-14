@@ -44,17 +44,28 @@ Route::prefix('mobile')->group(function () {
 
             Route::get('/get-reviews', [ProductController::class, 'getReviews']);
             Route::post('/reviews/{reviewid}/answer', [ProductController::class, 'reviewsOfanswer']);
+
             Route::get('/shipping-methods', [OrderController::class, 'shippingMethods']);
             Route::post('/shipping', [ShipmentController::class, 'createShipment']);
             Route::get('/shipments', [ShipmentController::class, 'getShipments']);
+
             Route::get('/earnings', [SellerEarningController::class, 'index']);
             Route::get('/earnings/summary', [SellerEarningController::class, 'summary']);
+
             Route::get('/notifications', [NotificationController::class, 'index']);
             Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
             Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
             Route::get('/support', [SupportController::class, 'myTickets']);
             Route::post('/support', [SupportController::class, 'store']);
             Route::get('/support/{id}', [SupportController::class, 'myTicketDetail']);
+
+            Route::post('/suppliers', [SuppliersController::class, 'store']);
+            Route::get('/suppliers/{id}', [SuppliersController::class, 'show']);
+            Route::put('/suppliers/{id}', [SuppliersController::class, 'update']);
+            Route::patch('/suppliers/{id}', [SuppliersController::class, 'update']);
+            Route::delete('/suppliers/{id}', [SuppliersController::class, 'destroy']);
+
             Route::get('/dashboard', [SellerDashboardController::class, 'index']);
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 
@@ -89,6 +100,8 @@ Route::prefix('mobile')->group(function () {
             Route::get('/wishlist', [WishlistController::class, 'index']);
             Route::post('/wishlist', [WishlistController::class, 'wishlist']);
             Route::post('/review-like', [ProductController::class, 'reviewLike']);
+            Route::get('/suppliers', [SuppliersController::class, 'index']);
+
 
             Route::post('/logout', [BuyerAuthController::class,'mobileLogout']);
         });
