@@ -23,17 +23,29 @@ class SellerEarningController extends Controller
         ]);
     }
 
+    // public function index(Request $request): JsonResponse
+    // {
+    //     $data = $request->validate([
+    //         'status' => ['nullable','in:available,paid,refunded,cancelled',],
+    //         'per_page' => ['nullable','integer','min:1','max:100', ],
+    //     ]);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Seller earnings fetched successfully.',
+    //         'data' => $this->earningService->listing($data),
+    //     ]);
+    // }
     public function index(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'status' => ['nullable','in:available,paid,refunded,cancelled',],
-            'per_page' => ['nullable','integer','min:1','max:100', ],
+        $filters = $request->validate([
+            'status' => ['nullable', 'in:available,paid,refunded,cancelled',],
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Seller earnings fetched successfully.',
-            'data' => $this->earningService->listing($data),
+            'data' => $this->earningService->listing($filters),
         ]);
     }
 }

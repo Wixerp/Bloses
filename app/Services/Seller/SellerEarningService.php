@@ -116,30 +116,70 @@ class SellerEarningService
         ];
     }
 
+    // public function listing(array $filters = [])
+    // {
+    //     $sellerId = $this->getSellerId();
+    //     $query = DB::table('seller_earnings')
+    //         ->join('orders', 'orders.id', '=', 'seller_earnings.order_id')
+    //         ->leftJoin('master_types as earning_status', 'earning_status.id', '=', 'seller_earnings.status_id')
+    //         ->leftJoin('payments', 'payments.order_id', '=', 'seller_earnings.order_id')
+    //         ->where('seller_earnings.seller_id', $sellerId)
+    //         ->select([
+    //             'seller_earnings.id','seller_earnings.order_id',
+    //             'orders.order_number',
+    //             'seller_earnings.gross_amount','seller_earnings.commission_percentage','seller_earnings.commission_amount',
+    //             'seller_earnings.net_amount','seller_earnings.status_id',
+    //             'earning_status.value as status','earning_status.description as status_name',
+    //             'payments.amount as payment_amount','payments.currency as payment_currency','payments.paid_at',
+    //             'seller_earnings.available_at','seller_earnings.created_at',
+    //         ]);
+
+    //     if (!empty($filters['status'])) {
+    //         $statusId = $this->getEarningStatusId($filters['status']);
+
+    //         if ($statusId) {
+    //             $query->where('seller_earnings.status_id', $statusId);
+    //         }
+    //     }
+
+    //     return $query->orderByDesc('seller_earnings.id')->get();
+    // }
     public function listing(array $filters = [])
     {
         $sellerId = $this->getSellerId();
+
         $query = DB::table('seller_earnings')
             ->join('orders', 'orders.id', '=', 'seller_earnings.order_id')
-            ->leftJoin('master_types as earning_status', 'earning_status.id', '=', 'seller_earnings.status_id')
-            ->leftJoin('payments', 'payments.order_id', '=', 'seller_earnings.order_id')
+            ->leftJoin(
+                'master_types as earning_status',
+                'earning_status.id',
+                '=',
+                'seller_earnings.status_id'
+            )
             ->where('seller_earnings.seller_id', $sellerId)
             ->select([
-                'seller_earnings.id','seller_earnings.order_id',
+                'seller_earnings.id',
+                'seller_earnings.order_id',
                 'orders.order_number',
-                'seller_earnings.gross_amount','seller_earnings.commission_percentage','seller_earnings.commission_amount',
-                'seller_earnings.net_amount','seller_earnings.status_id',
-                'earning_status.value as status','earning_status.description as status_name',
-                'payments.amount as payment_amount','payments.currency as payment_currency','payments.paid_at',
-                'seller_earnings.available_at','seller_earnings.created_at',
+                'seller_earnings.gross_amount',
+                'seller_earnings.commission_percentage',
+                'seller_earnings.commission_amount',
+                'seller_earnings.net_amount',
+                'seller_earnings.status_id',
+                'earning_status.value as status',
+                'earning_status.description as status_name',
+                'seller_earnings.available_at',
+                'seller_earnings.created_at',
             ]);
 
         if (!empty($filters['status'])) {
             $statusId = $this->getEarningStatusId($filters['status']);
 
-            if ($statusId) {
-                $query->where('seller_earnings.status_id', $statusId);
+            if (!$statusId) {
+                return $query->whereRaw('1 = 0')->get();
             }
+
+            $query->where('seller_earnings.status_id', $statusId);
         }
 
         return $query->orderByDesc('seller_earnings.id')->get();

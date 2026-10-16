@@ -6,13 +6,15 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\CloudinaryController;
 use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
 use App\Http\Controllers\Api\Product\ProductController;
-use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController};
+use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController, AdminEarningController, AdminPayoutController,
+AdminTransactionController, AdminCommissionController, AdminRefundController, AdminCodSettlementController, AdminPaymentSettingsController};
 use App\Http\Controllers\Api\Admin\User\UserController;
 use App\Http\Controllers\Api\Admin\Coupon\CouponController;
 use App\Http\Controllers\Api\Support\AdminSupportController;
 use App\Http\Controllers\Api\MasterType\MasterTypeController;
 use App\Http\Controllers\Api\Seller\SellerController;
 use App\Http\Controllers\Api\Categories\CategoriesController;
+
 
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
@@ -56,6 +58,44 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
+
+        Route::get('/earnings', [AdminEarningController::class, 'index']);
+        Route::get('/earnings/summary', [AdminEarningController::class, 'summary']);
+
+        Route::get('/payouts', [AdminPayoutController::class, 'index']);
+        Route::get('/payouts/summary', [AdminPayoutController::class, 'summary']);
+        Route::put('/payouts/{id}/approve', [AdminPayoutController::class, 'approve']);
+        Route::put('/payouts/{id}/reject', [AdminPayoutController::class, 'reject']);
+        Route::put('/payouts/{id}/processing', [AdminPayoutController::class, 'processing']);
+        Route::put('/payouts/{id}/paid', [AdminPayoutController::class, 'paid']);
+
+        Route::get('/transactions', [AdminTransactionController::class, 'index',]);
+        Route::get('/transactions/summary', [AdminTransactionController::class, 'summary',]);
+
+        Route::get('/commissions', [AdminCommissionController::class, 'index',]);
+        Route::post('/commissions', [AdminCommissionController::class, 'store',]);
+        Route::get('/commissions/history', [AdminCommissionController::class, 'history',]);
+        Route::get('/commissions/{id}', [AdminCommissionController::class, 'show',])->whereNumber('id');
+        Route::put('/commissions/{id}', [AdminCommissionController::class, 'update',])->whereNumber('id');
+        Route::patch('/commissions/{id}/status', [AdminCommissionController::class, 'updateStatus',])->whereNumber('id');
+
+        Route::get('/refunds/summary', [AdminRefundController::class, 'summary',]);
+        Route::get('/refunds', [AdminRefundController::class, 'index',]);
+        Route::get('/refunds/{id}', [AdminRefundController::class, 'show',])->whereNumber('id');
+        Route::post('/refunds/{id}/approve', [AdminRefundController::class, 'approve',])->whereNumber('id');
+        Route::post('/refunds/{id}/reject', [AdminRefundController::class, 'reject',])->whereNumber('id');
+        Route::post('/refunds/{id}/mark-refunded', [AdminRefundController::class, 'markRefunded',])->whereNumber('id');
+
+        Route::get('/cod-settlements/summary',[AdminCodSettlementController::class, 'summary']);
+        Route::get('/cod-settlements',[AdminCodSettlementController::class, 'index']);
+        Route::get('/cod-settlements/{id}',[AdminCodSettlementController::class, 'show'])->whereNumber('id');
+        Route::put('/cod-settlements/{id}/remittance',[AdminCodSettlementController::class, 'updateRemittance'])->whereNumber('id');
+
+        Route::get('/payment-settings', [AdminPaymentSettingsController::class, 'index']);
+        Route::put('/payment-settings', [AdminPaymentSettingsController::class, 'update']);
+        Route::patch('/{key}', [AdminPaymentSettingsController::class, 'updateOne']);
+        Route::get('/methods', [AdminPaymentSettingsController::class, 'methods']);
+        Route::patch('/methods/{id}', [AdminPaymentSettingsController::class, 'updateMethod']);
 
         Route::get('/tickets', [AdminSupportController::class, 'index']);
         Route::get('/tickets/{id}', [AdminSupportController::class, 'show']);

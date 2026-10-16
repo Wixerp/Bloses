@@ -6,7 +6,8 @@ use App\Http\Controllers\Api\Auth\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Auth\Seller\AuthController as SellerAuthController;
 use App\Http\Controllers\Api\Auth\Buyer\AuthController as BuyerAuthController;
 use App\Http\Controllers\Api\Master\MasterTypeController as MasterTypeController;
-use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController, SellerDashboardController};
+use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController, SellerDashboardController,
+SellerPaymentSettingsController, SellerCodSettlementController, SellerTransactionController, SellerCommissionController};
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
@@ -16,6 +17,8 @@ use App\Http\Controllers\Api\Order\OrderController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
 use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Support\{SupportController, BuyerSellerChatController};
+use App\Http\Controllers\Api\Seller\SellerPayoutController;
+use App\Http\Controllers\Api\Suppliers\SuppliersController;
 
 
 
@@ -65,6 +68,20 @@ Route::prefix('mobile')->group(function () {
             Route::put('/suppliers/{id}', [SuppliersController::class, 'update']);
             Route::patch('/suppliers/{id}', [SuppliersController::class, 'update']);
             Route::delete('/suppliers/{id}', [SuppliersController::class, 'destroy']);
+
+            Route::get('/payouts/balance', [SellerPayoutController::class, 'balance']);
+            Route::get('/payouts', [SellerPayoutController::class, 'index']);
+            Route::post('/payouts', [SellerPayoutController::class, 'store']);
+
+            Route::get('/payment-settings', [SellerPaymentSettingsController::class, 'index']);
+            Route::get('/payment-settings/methods', [SellerPaymentSettingsController::class, 'methods']);
+
+            Route::get('/cod-settlements/summary', [SellerCodSettlementController::class, 'summary']);
+            Route::get('/cod-settlements', [SellerCodSettlementController::class, 'index']);
+            Route::get('/cod-settlements/{id}', [SellerCodSettlementController::class, 'show']);
+
+            Route::get('/transactions/summary', [SellerTransactionController::class, 'summary']);
+            Route::get('/transactions', [SellerTransactionController::class, 'index']);
 
             Route::get('/dashboard', [SellerDashboardController::class, 'index']);
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);

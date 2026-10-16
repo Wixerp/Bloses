@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Auth\Seller\AuthController;
-use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController};
+use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController,
+SellerPayoutController, SellerBankAccountController, SellerDashboardController, SellerPaymentSettingsController,
+SellerCodSettlementController, SellerTransactionController, SellerCommissionController};
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
@@ -13,8 +15,6 @@ use App\Http\Controllers\Api\Suppliers\SuppliersController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
 use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Support\SupportController;
-use App\Http\Controllers\Api\Seller\SellerDashboardController;
-
 
 Route::prefix('seller')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -65,6 +65,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/suppliers/{id}', [SuppliersController::class, 'update']);
         Route::patch('/suppliers/{id}', [SuppliersController::class, 'update']);
         Route::delete('/suppliers/{id}', [SuppliersController::class, 'destroy']);
+
+        Route::get('/payouts/balance', [SellerPayoutController::class, 'balance']);
+        Route::get('/payouts', [SellerPayoutController::class, 'index']);
+        Route::post('/payouts', [SellerPayoutController::class, 'store']);
+
+        Route::get('/bank-accounts', [SellerBankAccountController::class, 'index']);
+        Route::post('/bank-accounts', [SellerBankAccountController::class, 'store']);
+        Route::get('/bank-accounts/{id}', [SellerBankAccountController::class, 'show']);
+        Route::put('/bank-accounts/{id}', [SellerBankAccountController::class, 'update']);
+        Route::delete('/bank-accounts/{id}', [SellerBankAccountController::class, 'destroy']);
+        Route::get('/bank-accounts/payout-options', [SellerBankAccountController::class, 'payoutOptions']);
+
+        Route::get('/payment-settings', [SellerPaymentSettingsController::class, 'index']);
+        Route::get('/payment-settings/methods', [SellerPaymentSettingsController::class, 'methods']);
+
+        Route::get('/cod-settlements/summary', [SellerCodSettlementController::class, 'summary']);
+        Route::get('/cod-settlements', [SellerCodSettlementController::class, 'index']);
+        Route::get('/cod-settlements/{id}', [SellerCodSettlementController::class, 'show']);
+
+        Route::get('/transactions/summary', [SellerTransactionController::class, 'summary']);
+        Route::get('/transactions', [SellerTransactionController::class, 'index']);
+
+        Route::get('/commission-details/summary', [SellerCommissionController::class, 'summary']);
+        Route::get('/commission-details', [SellerCommissionController::class, 'index']);
+        Route::get('/commission-details/{id}', [SellerCommissionController::class, 'show']);
 
         Route::get('/dashboard', [SellerDashboardController::class, 'index']);
     });
