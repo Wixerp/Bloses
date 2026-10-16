@@ -17,17 +17,32 @@ class SellerController extends Controller
         protected SellerService $sellerService
     ) {}
 
-    public function registrationStatus(RegistrationStatusRequest $request): JsonResponse {
-        $registered = $this->sellerService->registrationStatus(
-            $request->user_id
-        );
+    // public function registrationStatus(RegistrationStatusRequest $request): JsonResponse {
+    //     $registered = $this->sellerService->registrationStatus(
+    //         $request->user_id
+    //     );
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Seller registration status retrieved successfully.',
+    //         'status' => $registered,
+    //     ]);
+    // }
+
+    public function registrationStatus(RegistrationStatusRequest $request): JsonResponse
+    {
+        $userId = auth()->id();
+
+        $registered = $this->sellerService->registrationStatus($userId);
 
         return response()->json([
             'success' => true,
             'message' => 'Seller registration status retrieved successfully.',
+            'user_id' => $userId,
             'status' => $registered,
         ]);
     }
+
 
     public function profileshow(): JsonResponse
     {
@@ -74,6 +89,7 @@ class SellerController extends Controller
             })->groupBy('seller_id');
 
         $storeSettings = DB::table('seller_store_settings')->whereIn('seller_id', $sellerIds)
+        ->where('is_verified', true)
             ->select([
                 'id','seller_id','store_name','store_slug','store_description','logo','banner',
                 'email','phone','is_active','is_verified','verified_at',
@@ -141,6 +157,7 @@ class SellerController extends Controller
             });
 
         $storeSettings = DB::table('seller_store_settings')->where('seller_id', $seller->seller_id)
+        ->where('is_verified', true)
             ->select([
                 'id','seller_id','store_name','store_slug','store_description','logo',
                 'banner','email','phone','is_active','is_verified','verified_at',
@@ -185,6 +202,11 @@ class SellerController extends Controller
         $seller->admin_note = $request->reason;
         $seller->save();
 
+        DB::table('seller_store_settings')->where('seller_id', $seller->id)
+            ->update([
+                'is_verified' => true,
+            ]);
+
         return response()->json([
             'status'  => true,
             'message' => 'Seller profile status updated successfully.',
@@ -195,5 +217,25 @@ class SellerController extends Controller
             ],
         ], 200);
     }
+
+    public function profilestatscheck($id): JsonResponse
+    {
+        $seller = Seller::where('id', $id)->where('status_id', 36)->first();
+
+        if (!$seller) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Seller not found or not approved.',
+                'data' => false,
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Seller is approved.',
+            'data' => true,
+        ], 200);
+    }
+
 
 }

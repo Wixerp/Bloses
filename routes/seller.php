@@ -96,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/refunds/{id}', [SellerRefundController::class, 'show']);
 
         Route::get('/dashboard', [SellerDashboardController::class, 'index']);
+        Route::get('/profile-status-check/{id}', [SellerController::class, 'profilestatscheck']);
     });
 
     Route::get('/profile-show', [SellerController::class, 'profileshow']);

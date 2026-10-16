@@ -11,26 +11,353 @@ class OrderService{
         private NotificationService $notificationService
     ) {}
 
+    // public function createOrder(array $data)
+    // {
+    //     if (!auth()->check()) {
+    //         abort(401, 'Please login to place an order.');
+    //     }
+
+    //     $userId = auth()->id();
+    //     return DB::transaction(function () use ($data, $userId) {
+    //         $subtotal = (float) $data['subtotal'];
+    //         $discountAmount = (float) ($data['discount_amount'] ?? 0);
+    //         $taxAmount = (float) ($data['tax_amount'] ?? $data['tax'] ?? 0);
+    //         $shippingAmount = (float) ($data['shipping_amount'] ?? $data['shipping_cost'] ?? 0);
+    //         $totalAmount = (float) ($data['total'] ?? $data['total_amount'] ?? 0);
+    //         $processingStatusId = DB::table('master_types')->where('key', 'order_status')->where('value', 'processing')->value('id');
+
+    //         if (!$processingStatusId) {
+    //             abort(500, 'Processing order status not found.');
+    //         }
+    //         $orderId = DB::table('orders')->insertGetId([
+    //             'order_number' => CommonHelper::generateOrderNumber(),
+    //             'user_id' => $userId,
+    //             'status_id' => $processingStatusId,
+    //             'payment_method_id' => $data['payment_method_id'] ?? null,
+    //             'subtotal' => $subtotal,
+    //             'discount_amount' => $discountAmount,
+    //             'tax_amount' => $taxAmount,
+    //             'shipping_amount' => $shippingAmount,
+    //             'total_amount' => $totalAmount,
+    //             'customer_note' => $data['customer_note'] ?? null,
+    //             'plased_at' => now(),
+    //             'created_at' => now(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         DB::table('order_status_history')->insert([
+    //             'order_id' => $orderId,
+    //             'status_id' => $processingStatusId,
+    //             'previous_status_id' => null,
+    //             'changed_by' => $userId,
+    //             'comment' => 'Order placed',
+    //             'changed_at' => now(),
+    //             'created_at' => now(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         foreach ($data['items'] as $item) {
+    //             $product = DB::table('products')->where('id', $item['product_id'])->first();
+
+    //             if (!$product) {
+    //                 abort(404, 'Product not found.');
+    //             }
+
+    //             $variant = null;
+
+    //             if (!empty($item['product_variant_id'])) {
+    //                 $variant = DB::table('product_variants')->where('id', $item['product_variant_id'])->where('product_id', $item['product_id'])->first();
+
+    //                 if (!$variant) {
+    //                     abort(404, 'Product variant not found.');
+    //                 }
+    //             }
+
+    //             $store = DB::table('seller_store_settings')->where('id', $product->store_id)->first();
+
+    //             if (!$store) {
+    //                 abort(404, 'Seller store not found.');
+    //             }
+
+    //             $quantity = (int) $item['quantity'];
+    //             $unitPrice = $variant ? ($variant->price ?? $product->price) : $product->price;
+    //             $unitPrice = (float) $unitPrice;
+    //             $totalItemAmount = $unitPrice * $quantity;
+
+    //             DB::table('order_items')->insert([
+    //                 'order_id' => $orderId,
+    //                 'product_id' => $product->id,
+    //                 'product_variant_id' => $variant?->id,
+    //                 'seller_id' => $store->seller_id,
+    //                 'product_name' => $product->name,
+    //                 'variant_name' => $variant?->name,
+    //                 'sku' => $variant?->sku ?? $product->product_code,
+    //                 'unit_price' => $unitPrice,
+    //                 'quantity' => $quantity,
+    //                 'discount_amount' => 0,
+    //                 'tax_amount' => 0,
+    //                 'shipping_amount' => 0,
+    //                 'total_amount' => $totalItemAmount,
+    //                 'created_at' => now(),
+    //                 'updated_at' => now(),
+    //             ]);
+    //         }
+
+    //         $address = $data['address'];
+
+    //         DB::table('order_addresses')->insert([
+    //             'order_id' => $orderId,
+    //             'type_id' => null,
+    //             'first_name' => $address['first_name'],
+    //             'last_name' => $address['last_name'] ?? null,
+    //             'phone' => $address['phone'],
+    //             'email' => $address['email'] ?? null,
+    //             'address_line_1' => $address['address_line_1'],
+    //             'address_line_2' => $address['address_line_2'] ?? null,
+    //             'city' => $address['city'],
+    //             'state' => $address['state'] ?? null,
+    //             'postal_code' => $address['postal_code'] ?? null,
+    //             'country' => $address['country'],
+    //             'delivery_instructions' => $address['delivery_instructions'] ?? null,
+    //             'created_at' => now(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         $order = DB::table('orders')->where('id', $orderId)->first();
+
+    //         $this->notificationService->create([
+    //             'user_id' => $store->seller_id,
+    //             'type' => 'order',
+    //             'order_id' => $orderId,
+    //             'title' => 'Order Placed',
+    //             'message' => "Your order {$order->order_number} has been placed successfully.",
+    //             'action_url' => "/buyer/orders/{$orderId}",
+    //         ]);
+
+    //         return $order;
+    //     });
+    // }
     public function createOrder(array $data)
     {
         if (!auth()->check()) {
             abort(401, 'Please login to place an order.');
         }
 
-        $userId = auth()->id();
-        return DB::transaction(function () use ($data, $userId) {
-            $subtotal = (float) $data['subtotal'];
-            $discountAmount = (float) ($data['discount_amount'] ?? 0);
-            $taxAmount = (float) ($data['tax_amount'] ?? $data['tax'] ?? 0);
-            $shippingAmount = (float) ($data['shipping_amount'] ?? $data['shipping_cost'] ?? 0);
-            $totalAmount = (float) ($data['total'] ?? $data['total_amount'] ?? 0);
-            $processingStatusId = DB::table('master_types')->where('key', 'order_status')->where('value', 'processing')->value('id');
+        $userId = (int) auth()->id();
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId) {
+            $now = now();
+            $db = \Illuminate\Support\Facades\DB::class;
+
+            $preparedItems = [];
+            $subtotal = 0;
+            $sellerUserIds = [];
+
+            foreach ($data['items'] as $item) {
+                $product = $db::table('products')
+                    ->where('id', $item['product_id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$product) {
+                    abort(404, 'Product not found.');
+                }
+
+                $variant = null;
+
+                if (!empty($item['product_variant_id'])) {
+                    $variant = $db::table('product_variants')
+                        ->where('id', $item['product_variant_id'])
+                        ->where('product_id', $product->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$variant) {
+                        abort(404, 'Product variant not found.');
+                    }
+                }
+
+                $store = $db::table('seller_store_settings')
+                    ->where('id', $product->store_id)
+                    ->first();
+
+                if (!$store) {
+                    abort(404, 'Seller store not found.');
+                }
+
+                $quantity = (int) $item['quantity'];
+
+                $unitPrice = (float) (
+                    $variant
+                        ? ($variant->price ?? $product->price)
+                        : $product->price
+                );
+
+                if ($unitPrice < 0) {
+                    abort(422, 'Invalid product price.');
+                }
+
+                $lineTotal = round($unitPrice * $quantity, 2);
+                $subtotal += $lineTotal;
+                $sellerUserId = $db::table('sellers')
+                    ->where('id', $store->seller_id)
+                    ->value('user_id');
+
+                if ($sellerUserId) {
+                    $sellerUserIds[(int) $sellerUserId] = (int) $sellerUserId;
+                }
+
+                $preparedItems[] = [
+                    'product' => $product,
+                    'variant' => $variant,
+                    'store' => $store,
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'line_total' => $lineTotal,
+                ];
+            }
+
+            $subtotal = round($subtotal, 2);
+            $taxAmount = (float) (
+                $data['tax_amount'] ?? $data['tax'] ?? 0
+            );
+
+            $shippingAmount = (float) (
+                $data['shipping_amount']
+                    ?? $data['shipping_cost']
+                    ?? 0
+            );
+
+            $coupon = null;
+            $discountAmount = 0;
+
+            if (!empty($data['coupon_code'])) {
+                $couponCode = trim($data['coupon_code']);
+
+                $coupon = $db::table('coupons')
+                    ->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$coupon || !$coupon->is_active) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => ['Invalid or inactive coupon code.'],
+                    ]);
+                }
+
+                if (
+                    $coupon->starts_at &&
+                    $now->lt(\Illuminate\Support\Carbon::parse($coupon->starts_at))
+                ) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => ['This coupon is not active yet.'],
+                    ]);
+                }
+
+                if (
+                    $coupon->expires_at &&
+                    $now->gt(\Illuminate\Support\Carbon::parse($coupon->expires_at))
+                ) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => ['This coupon has expired.'],
+                    ]);
+                }
+
+                if ($subtotal < (float) $coupon->minimum_order_amount) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => [
+                            'Minimum order amount is '
+                            . number_format(
+                                (float) $coupon->minimum_order_amount,
+                                2
+                            ),
+                        ],
+                    ]);
+                }
+
+                if (
+                    $coupon->usage_limit !== null &&
+                    (int) $coupon->used_count >= (int) $coupon->usage_limit
+                ) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => ['This coupon has reached its usage limit.'],
+                    ]);
+                }
+
+                if ($coupon->user_usage_limit !== null) {
+                    $userUsage = $db::table('coupon_usages')
+                        ->where('coupon_id', $coupon->id)
+                        ->where('user_id', $userId)
+                        ->count();
+
+                    if ($userUsage >= (int) $coupon->user_usage_limit) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'coupon_code' => [
+                                'You have reached your usage limit for this coupon.',
+                            ],
+                        ]);
+                    }
+                }
+
+                $discountType = $db::table('master_types')
+                    ->where('id', $coupon->discount_type_id)
+                    ->first(['key', 'value', 'description']);
+
+                $type = strtolower(trim((string) (
+                    $discountType->value
+                        ?? $discountType->key
+                        ?? $discountType->description
+                        ?? ''
+                )));
+
+                if ($type === 'percentage') {
+                    $discountAmount =
+                        $subtotal * (float) $coupon->discount_value / 100;
+                } elseif (in_array($type, [
+                    'fixed',
+                    'fixed_amount',
+                    'amount',
+                ], true)) {
+                    $discountAmount = (float) $coupon->discount_value;
+                } else {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => [
+                            'Unsupported coupon discount type.',
+                        ],
+                    ]);
+                }
+
+                if ($coupon->maximum_discount !== null) {
+                    $discountAmount = min(
+                        $discountAmount,
+                        (float) $coupon->maximum_discount
+                    );
+                }
+
+                $discountAmount = round(
+                    min(max($discountAmount, 0), $subtotal),
+                    2
+                );
+            }
+
+            $totalAmount = round(
+                max(0, $subtotal - $discountAmount)
+                    + $taxAmount
+                    + $shippingAmount,
+                2
+            );
+
+            $processingStatusId = $db::table('master_types')
+                ->where('key', 'order_status')
+                ->where('value', 'processing')
+                ->value('id');
 
             if (!$processingStatusId) {
                 abort(500, 'Processing order status not found.');
             }
-            $orderId = DB::table('orders')->insertGetId([
-                'order_number' => CommonHelper::generateOrderNumber(),
+
+            $orderId = $db::table('orders')->insertGetId([
+                'order_number' => \App\Helpers\CommonHelper::generateOrderNumber(),
                 'user_id' => $userId,
                 'status_id' => $processingStatusId,
                 'payment_method_id' => $data['payment_method_id'] ?? null,
@@ -40,51 +367,28 @@ class OrderService{
                 'shipping_amount' => $shippingAmount,
                 'total_amount' => $totalAmount,
                 'customer_note' => $data['customer_note'] ?? null,
-                'plased_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
+                'plased_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
 
-            DB::table('order_status_history')->insert([
+            $db::table('order_status_history')->insert([
                 'order_id' => $orderId,
                 'status_id' => $processingStatusId,
                 'previous_status_id' => null,
                 'changed_by' => $userId,
                 'comment' => 'Order placed',
-                'changed_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
+                'changed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
 
-            foreach ($data['items'] as $item) {
-                $product = DB::table('products')->where('id', $item['product_id'])->first();
+            foreach ($preparedItems as $prepared) {
+                $product = $prepared['product'];
+                $variant = $prepared['variant'];
+                $store = $prepared['store'];
 
-                if (!$product) {
-                    abort(404, 'Product not found.');
-                }
-
-                $variant = null;
-
-                if (!empty($item['product_variant_id'])) {
-                    $variant = DB::table('product_variants')->where('id', $item['product_variant_id'])->where('product_id', $item['product_id'])->first();
-
-                    if (!$variant) {
-                        abort(404, 'Product variant not found.');
-                    }
-                }
-
-                $store = DB::table('seller_store_settings')->where('id', $product->store_id)->first();
-
-                if (!$store) {
-                    abort(404, 'Seller store not found.');
-                }
-
-                $quantity = (int) $item['quantity'];
-                $unitPrice = $variant ? ($variant->price ?? $product->price) : $product->price;
-                $unitPrice = (float) $unitPrice;
-                $totalItemAmount = $unitPrice * $quantity;
-
-                DB::table('order_items')->insert([
+                $db::table('order_items')->insert([
                     'order_id' => $orderId,
                     'product_id' => $product->id,
                     'product_variant_id' => $variant?->id,
@@ -92,20 +396,20 @@ class OrderService{
                     'product_name' => $product->name,
                     'variant_name' => $variant?->name,
                     'sku' => $variant?->sku ?? $product->product_code,
-                    'unit_price' => $unitPrice,
-                    'quantity' => $quantity,
+                    'unit_price' => $prepared['unit_price'],
+                    'quantity' => $prepared['quantity'],
                     'discount_amount' => 0,
                     'tax_amount' => 0,
                     'shipping_amount' => 0,
-                    'total_amount' => $totalItemAmount,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'total_amount' => $prepared['line_total'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
             }
 
             $address = $data['address'];
 
-            DB::table('order_addresses')->insert([
+            $db::table('order_addresses')->insert([
                 'order_id' => $orderId,
                 'type_id' => null,
                 'first_name' => $address['first_name'],
@@ -119,20 +423,55 @@ class OrderService{
                 'postal_code' => $address['postal_code'] ?? null,
                 'country' => $address['country'],
                 'delivery_instructions' => $address['delivery_instructions'] ?? null,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
 
-            $order = DB::table('orders')->where('id', $orderId)->first();
+            if ($coupon) {
+                $db::table('coupon_usages')->insert([
+                    'coupon_id' => $coupon->id,
+                    'user_id' => $userId,
+                    'order_id' => $orderId,
+                    'discount_amount' => $discountAmount,
+                    'used_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
 
-            $this->notificationService->create([
-                'user_id' => $store->seller_id,
-                'type' => 'order',
-                'order_id' => $orderId,
-                'title' => 'Order Placed',
-                'message' => "Your order {$order->order_number} has been placed successfully.",
-                'action_url' => "/buyer/orders/{$orderId}",
-            ]);
+                $db::table('coupons')
+                    ->where('id', $coupon->id)
+                    ->increment('used_count', 1, [
+                        'updated_at' => $now,
+                    ]);
+            }
+
+            foreach (array_values($sellerUserIds) as $sellerUserId) {
+                $this->notificationService->create([
+                    'user_id' => $sellerUserId,
+                    'type' => 'order',
+                    'order_id' => $orderId,
+                    'title' => 'Order Placed',
+                    'message' => "Order placed successfully. Order ID: {$orderId}.",
+                    'action_url' => "/seller/orders/{$orderId}",
+                ]);
+            }
+
+            $order = $db::table('orders')
+                ->where('id', $orderId)
+                ->first();
+
+            // return [
+            //     'order' => $order,
+            //     'coupon' => $coupon ? [
+            //         'id' => (int) $coupon->id,
+            //         'code' => $coupon->code,
+            //         'discount_amount' => $discountAmount,
+            //     ] : null,
+            // ];
+
+            // $order = DB::table('orders')
+            //     ->where('id', $orderId)
+            //     ->first();
 
             return $order;
         });

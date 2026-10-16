@@ -10,25 +10,64 @@ use Illuminate\Support\Str;
 
 class ProductService
 {
+    // public function getAll()
+    // {
+    //     $sellerId = auth()->id();
+
+    //     $products = DB::table('products')
+    //         ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
+    //         ->leftJoin('master_types as status','status.id','=','products.status_id')
+    //         ->where('seller_store_settings.seller_id', $sellerId)
+    //         ->select(
+    //             'products.id','products.product_code','products.name',
+    //             'seller_store_settings.store_name as store_name',
+    //             'status.description as status','products.is_featured','products.is_active','products.published_at',
+    //             DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
+    //             DB::raw("(SELECT CONCAT( '" . rtrim(config('app.url'), '/') . "/storage/', pi.image_path)
+    //                     FROM product_images pi WHERE pi.product_id = products.id
+    //                     ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1
+    //                 ) AS image
+    //             ")
+    //         )->orderByDesc('products.id')->get();
+
+    //     return $products;
+    // }
     public function getAll()
     {
-        $sellerId = auth()->id();
+        $userId = auth()->id();
+
+        if (!$userId) {
+            abort(401, 'Please login first.');
+        }
+
+        $sellerId = DB::table('sellers')->where('user_id', $userId)->value('id');
+
+        if (!$sellerId) {
+            return collect();
+        }
 
         $products = DB::table('products')
             ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
             ->leftJoin('master_types as status','status.id','=','products.status_id')
             ->where('seller_store_settings.seller_id', $sellerId)
             ->select(
-                'products.id','products.product_code','products.name',
-                'seller_store_settings.store_name as store_name',
+                'products.id','products.product_code','products.name','seller_store_settings.store_name as store_name',
                 'status.description as status','products.is_featured','products.is_active','products.published_at',
                 DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
-                DB::raw("(SELECT CONCAT( '" . rtrim(config('app.url'), '/') . "/storage/', pi.image_path)
-                        FROM product_images pi WHERE pi.product_id = products.id
-                        ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1
+                DB::raw("(
+                        SELECT CONCAT(
+                            '" . rtrim(config('app.url'), '/') . "/storage/',
+                            pi.image_path
+                        )
+                        FROM product_images pi
+                        WHERE pi.product_id = products.id
+                        ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                        LIMIT 1
                     ) AS image
                 ")
-            )->orderByDesc('products.id')->get();
+            )
+            ->orderByDesc('products.id')
+            ->get();
 
         return $products;
     }
