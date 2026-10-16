@@ -7,7 +7,8 @@ use App\Http\Controllers\Api\Auth\Seller\AuthController as SellerAuthController;
 use App\Http\Controllers\Api\Auth\Buyer\AuthController as BuyerAuthController;
 use App\Http\Controllers\Api\Master\MasterTypeController as MasterTypeController;
 use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController, SellerDashboardController,
-SellerPaymentSettingsController, SellerCodSettlementController, SellerTransactionController, SellerCommissionController};
+SellerPaymentSettingsController, SellerCodSettlementController, SellerTransactionController, SellerCommissionController,
+SellerRefundController};
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
@@ -82,6 +83,10 @@ Route::prefix('mobile')->group(function () {
 
             Route::get('/transactions/summary', [SellerTransactionController::class, 'summary']);
             Route::get('/transactions', [SellerTransactionController::class, 'index']);
+
+            Route::get('/refunds/summary', [SellerRefundController::class, 'summary']);
+            Route::get('/refunds', [SellerRefundController::class, 'index']);
+            Route::get('/refunds/{id}', [SellerRefundController::class, 'show']);
 
             Route::get('/dashboard', [SellerDashboardController::class, 'index']);
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);

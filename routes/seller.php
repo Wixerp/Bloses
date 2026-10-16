@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Auth\Seller\AuthController;
 use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController,
 SellerPayoutController, SellerBankAccountController, SellerDashboardController, SellerPaymentSettingsController,
-SellerCodSettlementController, SellerTransactionController, SellerCommissionController};
+SellerCodSettlementController, SellerTransactionController, SellerCommissionController, SellerRefundController};
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
@@ -90,6 +90,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/commission-details/summary', [SellerCommissionController::class, 'summary']);
         Route::get('/commission-details', [SellerCommissionController::class, 'index']);
         Route::get('/commission-details/{id}', [SellerCommissionController::class, 'show']);
+
+        Route::get('/refunds/summary', [SellerRefundController::class, 'summary']);
+        Route::get('/refunds', [SellerRefundController::class, 'index']);
+        Route::get('/refunds/{id}', [SellerRefundController::class, 'show']);
 
         Route::get('/dashboard', [SellerDashboardController::class, 'index']);
     });
