@@ -17,23 +17,26 @@ class SellerController extends Controller
         protected SellerService $sellerService
     ) {}
 
-    // public function registrationStatus(RegistrationStatusRequest $request): JsonResponse {
-    //     $registered = $this->sellerService->registrationStatus(
-    //         $request->user_id
-    //     );
+    // public function registrationStatus(RegistrationStatusRequest $request): JsonResponse
+    // {
+    //     $userId = auth()->id();
+
+    //     $registered = $this->sellerService->registrationStatus($userId);
 
     //     return response()->json([
     //         'success' => true,
     //         'message' => 'Seller registration status retrieved successfully.',
+    //         'user_id' => $userId,
     //         'status' => $registered,
     //     ]);
     // }
-
-    public function registrationStatus(RegistrationStatusRequest $request): JsonResponse
-    {
+    public function registrationStatus(
+        RegistrationStatusRequest $request
+    ): JsonResponse {
         $userId = auth()->id();
 
-        $registered = $this->sellerService->registrationStatus($userId);
+        $registered = $this->sellerService
+            ->registrationStatus($userId);
 
         return response()->json([
             'success' => true,

@@ -46,6 +46,58 @@ class AdminAuthService
         });
     }
 
+    public function getUser(int $id): User
+    {
+        return User::with('roles')->findOrFail($id);
+    }
+
+    public function getAllUsers()
+    {
+        return User::with('roles')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    public function updateUser(int $id, array $data): User
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $user = User::findOrFail($id);
+
+            $userData = [
+                'name' => $data['name'],
+                'email' => $data['email'],
+            ];
+
+            if (array_key_exists('is_active', $data)) {
+                $userData['is_active'] = $data['is_active'];
+            }
+
+            if (!empty($data['password'])) {
+                $userData['password'] = Hash::make(
+                    $data['password']
+                );
+            }
+
+            $user->update($userData);
+
+            if (isset($data['role'])) {
+                $user->syncRoles([$data['role']]);
+            }
+
+            return $user->fresh()->load('roles');
+        });
+    }
+
+    // Delete user
+    public function deleteUser(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $user = User::findOrFail($id);
+
+            return (bool) $user->delete();
+        });
+    }
+
     public function login(string $email, string $password, string $login_type): array
     {
         $user = $this->authenticate($email, $password);

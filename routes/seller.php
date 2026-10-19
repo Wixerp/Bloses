@@ -23,7 +23,7 @@ Route::prefix('seller')->group(function () {
     Route::middleware(['auth:sanctum', 'role:seller'])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-        Route::post('/profile-status', [SellerController::class, 'registrationStatus']);
+        Route::get('/profile-status', [SellerController::class, 'registrationStatus']);
     });
 
 });

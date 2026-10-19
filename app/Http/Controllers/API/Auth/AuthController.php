@@ -41,6 +41,70 @@ class AuthController extends Controller
         );
     }
 
+    public function index()
+    {
+        $users = $this->adminAuthService->getAllUsers();
+
+        return ApiResponse::success(
+            'Users retrieved successfully.',
+            AuthResource::collection($users)
+        );
+    }
+
+    public function show(int $id)
+    {
+        $user = $this->adminAuthService->getUser($id);
+
+        return ApiResponse::success(
+            'User retrieved successfully.',
+            new AuthResource($user)
+        );
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($id),
+            ],
+            'role' => [
+                'required', Rule::in(['buyer', 'seller', 'admin'])
+            ],
+            'password' => [
+                'nullable', 'string', 'min:8', 'confirmed'
+            ],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $user = $this->adminAuthService->updateUser($id, $data);
+
+        return ApiResponse::success(
+            'User updated successfully.',
+            new AuthResource($user)
+        );
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        if ((int) $request->user()->id === $id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot delete your own account.',
+            ], 422);
+        }
+
+        $this->adminAuthService->deleteUser($id);
+
+        return ApiResponse::success(
+            'User deleted successfully.',
+            null
+        );
+    }
+
     public function adminLogin(AdminLoginRequest $request): JsonResponse
     {
         $result = $this->adminAuthService->loginWeb(
@@ -54,9 +118,6 @@ class AuthController extends Controller
         );
     }
 
-    /**
-     * Admin Logout
-     */
     public function adminLogout(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
@@ -69,9 +130,6 @@ class AuthController extends Controller
         );
     }
 
-    /**
-     * Logged In Admin
-     */
     public function me(Request $request): JsonResponse
     {
         return ApiResponse::success(
@@ -97,9 +155,6 @@ class AuthController extends Controller
         );
     }
 
-    /**
-     * Mobile Logged In User
-     */
     public function mobileMe(Request $request): JsonResponse
     {
         return ApiResponse::success(
@@ -108,9 +163,6 @@ class AuthController extends Controller
         );
     }
 
-    /**
-     * Mobile Logout
-     */
     public function mobileLogout(Request $request): JsonResponse
     {
         $this->adminAuthService->logout(
@@ -121,4 +173,5 @@ class AuthController extends Controller
             'Logout successful.'
         );
     }
+
 }

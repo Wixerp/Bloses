@@ -4,11 +4,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 use App\Http\Controllers\Api\CloudinaryController;
-use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController};
+use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController, PasswordResetController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController, AdminEarningController, AdminPayoutController,
 AdminTransactionController, AdminCommissionController, AdminRefundController, AdminCodSettlementController,
-AdminPaymentSettingsController, AdminOrderController};
+AdminPaymentSettingsController, AdminOrderController, AdminSellerDocumentController};
 use App\Http\Controllers\Api\Admin\User\UserController;
 use App\Http\Controllers\Api\Admin\Coupon\CouponController;
 use App\Http\Controllers\Api\Support\AdminSupportController;
@@ -25,7 +25,13 @@ Route::prefix('admin')->group(function () {
     Route::post('/login', [AuthController::class, 'adminLogin']);
 
     Route::middleware(['auth:sanctum', 'role:admin',])->group(function () {
+        Route::get('/users', [AuthController::class, 'index']);
         Route::post('/register', [AuthController::class, 'register']);
+        Route::get('/users/{id}', [AuthController::class, 'show']);
+        Route::put('/users/{id}', [AuthController::class, 'update']);
+        Route::patch('/users/{id}', [AuthController::class, 'update']);
+        Route::delete('/users/{id}', [AuthController::class, 'destroy']);
+
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'adminLogout']);
         Route::post('/seller-approval', [SellerController::class, 'sellerprofileapproval']);
@@ -103,12 +109,20 @@ Route::prefix('admin')->group(function () {
         Route::post('/tickets/{id}/reply', [AdminSupportController::class, 'reply']);
         Route::patch('/tickets/{id}/status', [AdminSupportController::class, 'updateStatus']);
         Route::get('/orders/details', [AdminOrderController::class, 'index']);
+
+        Route::get('/sellers/{sellerId}/documents', [AdminSellerDocumentController::class, 'index']);
+        Route::get('/seller-documents/{documentId}/view', [AdminSellerDocumentController::class, 'view']);
+        Route::get('/seller-documents/{documentId}/download', [AdminSellerDocumentController::class, 'download']);
     });
 
 });
 
 Route::get('/categories', [CategoriesController::class, 'getCategories']);
 Route::get('/master-types/{key}', [MasterTypeController::class, 'getByKey']);
+
+Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+
 
 Route::get('/test', function () {
     return 'api run';

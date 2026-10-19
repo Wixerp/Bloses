@@ -3,11 +3,11 @@
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SellerStatusChanged implements ShouldBroadcast
+class SellerStatusChanged implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 
@@ -16,8 +16,7 @@ class SellerStatusChanged implements ShouldBroadcast
         public int $user_id,
         public ?int $old_status_id,
         public ?int $status_id
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {
@@ -38,6 +37,7 @@ class SellerStatusChanged implements ShouldBroadcast
             'user_id' => $this->user_id,
             'old_status_id' => $this->old_status_id,
             'status_id' => $this->status_id,
+            'is_approved' => $this->status_id === 36,
         ];
     }
 }
