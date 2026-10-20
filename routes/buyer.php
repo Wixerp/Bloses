@@ -3,12 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\Buyer\AuthController;
 use App\Http\Controllers\Api\Product\ProductController;
-use App\Http\Controllers\Api\Categories\CategoriesController;
-use App\Http\Controllers\Api\Categories\BuyerCategoryController;
+use App\Http\Controllers\Api\Categories\{CategoriesController, BuyerCategoryController};
 use App\Http\Controllers\Api\Admin\ProductsController;
 use App\Http\Controllers\Api\Order\OrderController;
-use App\Http\Controllers\Api\Buyer\AddressController;
-use App\Http\Controllers\Api\Buyer\WishlistController;
+use App\Http\Controllers\Api\Buyer\{AddressController, WishlistController};
 use App\Http\Controllers\Api\Support\BuyerSellerChatController;
 
 
