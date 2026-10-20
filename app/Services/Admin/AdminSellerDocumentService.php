@@ -2,18 +2,12 @@
 
 namespace App\Services\Admin;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\{DB, Storage};
+use Symfony\Component\HttpFoundation\{BinaryFileResponse, StreamedResponse};
 
 class AdminSellerDocumentService
 {
-    /**
-     * Get seller details and uploaded documents.
-     */
-    public function getSellerDocuments(int $sellerId): array
-    {
+    public function getSellerDocuments(int $sellerId): array {
         $seller = DB::table('sellers')
             ->join('users', 'users.id', '=', 'sellers.user_id')
             ->where('sellers.id', $sellerId)
@@ -81,17 +75,12 @@ class AdminSellerDocumentService
         ];
     }
 
-    /**
-     * Find a document and verify that its file exists.
-     */
     private function getDocument(int $documentId): object
     {
-        $document = DB::table('seller_documents')
-            ->where('id', $documentId)
-            ->first();
+        $document = DB::table('seller_documents')->where('id', $documentId)->first();
 
         if (!$document) {
-            abort(404, 'Document not found.');
+            abort(404, 'Seller document not found.');
         }
 
         if (!Storage::disk('public')->exists($document->file_path)) {
@@ -101,18 +90,11 @@ class AdminSellerDocumentService
         return $document;
     }
 
-    /**
-     * View an image or PDF in the browser.
-     */
-    public function viewDocument(
-        int $documentId
-    ): BinaryFileResponse {
+    public function viewDocument(int $documentId): BinaryFileResponse {
         $document = $this->getDocument($documentId);
-
         $disk = Storage::disk('public');
 
-        $mimeType = $disk->mimeType($document->file_path)
-            ?: 'application/octet-stream';
+        $mimeType = $disk->mimeType($document->file_path) ?: 'application/octet-stream';
 
         $allowedTypes = [
             'image/jpeg',
@@ -131,19 +113,12 @@ class AdminSellerDocumentService
                 'Content-Type' => $mimeType,
                 'X-Content-Type-Options' => 'nosniff',
                 'Cache-Control' => 'private, no-store',
-                'Content-Disposition' => 'inline; filename="'
-                    . basename($document->original_file_name)
-                    . '"',
+                'Content-Disposition' => 'inline; filename="' . basename($document->original_file_name) . '"',
             ]
         );
     }
 
-    /**
-     * Download a seller document.
-     */
-    public function downloadDocument(
-        int $documentId
-    ): StreamedResponse {
+    public function downloadDocument(int $documentId): StreamedResponse {
         $document = $this->getDocument($documentId);
 
         return Storage::disk('public')->download(
@@ -155,4 +130,61 @@ class AdminSellerDocumentService
             ]
         );
     }
+
+    public function updateDocumentStatus(int $documentId, string $action, ?string $adminNote = null): array {
+        if (!in_array($action, ['approved', 'disapproved'], true)) {
+            abort(422, 'Action must be approved or disapproved.');
+        }
+
+        if ($action === 'disapproved' && blank($adminNote)) {
+            abort(422, 'Disapproval reason is required.');
+        }
+
+        $statusId = match ($action) {
+            'approved' => 36,
+            'disapproved' => 37,
+        };
+
+        $adminId = auth()->id();
+
+        if (!$adminId) {
+            abort(401, 'Admin authentication required.');
+        }
+
+        return DB::transaction(function () use ($documentId, $action, $adminNote, $statusId, $adminId) {
+            $document = DB::table('seller_documents')->where('id', $documentId)->lockForUpdate()->first();
+
+            if (!$document) {
+                abort(404, 'Seller document not found.');
+            }
+
+            DB::table('seller_documents')->where('id', $documentId)
+                ->update([
+                    'status_id' => $statusId,
+                    'admin_note' => $action === 'disapproved' ? trim($adminNote ?? '') : null,
+                    'verified_at' => now(),
+                    'verified_by' => $adminId,
+                    'updated_at' => now(),
+                ]);
+
+            $updated = DB::table('seller_documents')->where('id', $documentId)->first();
+
+            if ((int) $updated->status_id !== $statusId) {
+                throw new \RuntimeException('Document status was not saved correctly.');
+            }
+
+            return [
+                'id' => $updated->id,
+                'seller_id' => $updated->seller_id,
+                'document_type_id' => $updated->document_type_id,
+                'status_id' => (int) $updated->status_id,
+                'status' => $statusId === 36 ? 'Approved' : 'Disapproved',
+                'admin_note' => $updated->admin_note,
+                'verified_at' => $updated->verified_at,
+                'verified_by' => $updated->verified_by,
+                'updated_at' => $updated->updated_at,
+            ];
+        });
+    }
+
 }

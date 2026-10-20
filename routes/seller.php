@@ -32,29 +32,42 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('seller')->group(function () {
         Route::post('/profile', [SellerRegistrationController::class, 'register']);
+
         Route::get('/cities', [SellercityController::class, 'getCitiesBycity']);
+
         Route::get('/provinces', [SellerProvinceController::class, 'getStateBystate']);
+
         Route::get('/countries', [SellerCountryController::class, 'getcountryBycountry']);
+
         Route::get('/brands', [ProductController::class, 'getBrands']);
+
         Route::get('/master-types/{key}', [MasterTypeController::class, 'getkeBymaster']);
+
         Route::get('/get-questions', [ProductController::class, 'getQuestion']);
         Route::post('/questions/{questionId}/answer', [ProductController::class, 'questionOfanswer']);
+
         Route::get('/get-reviews', [ProductController::class, 'getReviews']);
         Route::post('/reviews/{reviewid}/answer', [ProductController::class, 'reviewsOfanswer']);
+
         Route::get('/orders', [OrderController::class, 'sellerOrders']);
         Route::get('/orders/returns', [OrderController::class, 'sellerReturnOrders']);
         Route::get('/orders/{orderId}', [OrderController::class, 'sellerOrderDetail']);
         Route::put('/order-status-update', [OrderController::class, 'updateOrderStatus']);
+
         Route::get('/inventory', [InventoryController::class, 'index']);
         Route::put('/inventory/{productId}', [InventoryController::class, 'update']);
+
         Route::get('/shipping-methods', [OrderController::class, 'shippingMethods']);
         Route::post('/shipping', [ShipmentController::class, 'createShipment']);
         Route::get('/shipments', [ShipmentController::class, 'getShipments']);
+
         Route::get('/earnings', [SellerEarningController::class, 'index']);
         Route::get('/earnings/summary', [SellerEarningController::class, 'summary']);
+
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
         Route::get('/support', [SupportController::class, 'myTickets']);
         Route::post('/support/{id?}', [SupportController::class, 'store']);
         Route::get('/support/{id}', [SupportController::class, 'myTicketDetail']);
