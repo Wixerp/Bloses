@@ -62,6 +62,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/reviews/{id}', [ReviewController::class, 'show']);
         Route::put('/reviews/{id}', [ReviewController::class, 'update']);
         Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
+        
+        Route::get('/orders/details', [AdminOrderController::class, 'index']);
 
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
@@ -108,8 +110,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/tickets/{id}', [AdminSupportController::class, 'show']);
         Route::post('/tickets/{id}/reply', [AdminSupportController::class, 'reply']);
         Route::patch('/tickets/{id}/status', [AdminSupportController::class, 'updateStatus']);
-        
-        Route::get('/orders/details', [AdminOrderController::class, 'index']);
+
 
         Route::get('/sellers/{sellerId}/documents', [AdminSellerDocumentController::class, 'index']);
         Route::get('/seller-documents/{documentId}/view', [AdminSellerDocumentController::class, 'view']);
