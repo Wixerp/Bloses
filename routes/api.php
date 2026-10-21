@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\CloudinaryController;
 use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController, PasswordResetController};
 use App\Http\Controllers\Api\Product\ProductController;
-use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController, AdminEarningController,
+use App\Http\Controllers\Api\Admin\{AdminDashboardController, ProductsController, ReviewController, OrderController, AdminEarningController,
 AdminPayoutController,
 AdminTransactionController, AdminCommissionController, AdminRefundController, AdminCodSettlementController,
 AdminPaymentSettingsController, AdminOrderController, AdminSellerDocumentController, AdminReturnController,
@@ -15,7 +15,8 @@ SellerPerformanceController, StoreVerificationController, SellerSuspensionContro
 ShippingMethodController, ShippingZoneController, FailedDeliveryController, AdminShippingRateController,
 OrderReportController, SellerReportController, ProductInventoryReportController, CommissionPayoutReportController,
 CustomerReportController, ShippingConfigurationController, AdminProductQuestionController, AdminNotificationController,
-LocationController, TaxSettingController, EmailSmsSettingController, SalesReportController, AuditLogController};
+LocationController, TaxSettingController, EmailSmsSettingController, SalesReportController, AuditLogController,
+ShipmentTrackingController, RolePermissionController};
 use App\Http\Controllers\Api\Admin\User\UserController;
 use App\Http\Controllers\Api\Admin\Coupon\CouponController;
 use App\Http\Controllers\Api\Support\AdminSupportController;
@@ -42,6 +43,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'adminLogout']);
         Route::post('/seller-approval', [SellerController::class, 'sellerprofileapproval']);
+
+        Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 
         Route::get('/categories/{id}', [CategoriesController::class, 'getCategory']);
         Route::post('/categories', [CategoriesController::class, 'postCategories']);
@@ -246,6 +249,28 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/audit-logs', [AuditLogController::class, 'index',]);
         Route::get('/audit-logs/{id}', [AuditLogController::class, 'show',])->whereNumber('id');
+        
+        // Roles
+        Route::get('/roles', [RolePermissionController::class, 'indexRoles']);
+        Route::post('/roles', [RolePermissionController::class, 'storeRole']);
+        Route::put('/roles/{role}', [RolePermissionController::class, 'updateRole']);
+        Route::delete('/roles/{role}', [RolePermissionController::class, 'destroyRole']);
+
+        // Permissions
+        Route::get('/permissions', [RolePermissionController::class, 'indexPermissions']);
+        Route::post('/permissions', [RolePermissionController::class, 'storePermission']);
+        Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission']);
+        Route::delete('/permissions/{permission}', [RolePermissionController::class, 'destroyPermission']);
+
+        // Assign permissions to a role
+        Route::put('/roles/{role}/permissions', [RolePermissionController::class, 'syncRolePermissions']);
+
+        // Assign roles or direct permissions to a user
+        Route::put('/users/{user}/roles', [RolePermissionController::class, 'assignUserRoles']);
+        Route::put('/users/{user}/permissions', [RolePermissionController::class, 'syncUserPermissions']);
+
+        // Inspect effective access
+        Route::get('/users/{user}/access', [RolePermissionController::class, 'userAccess']);
     });
 
 });
