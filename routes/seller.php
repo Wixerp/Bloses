@@ -120,4 +120,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('products', ProductController::class);
     });
 
+    // Route::prefix('seller')
+    // ->middleware([
+    //     'auth:sanctum',
+    //     'role:seller',
+    //     'seller.not_suspended',
+    // ])
+    // ->group(function () {
+    //     // Apne existing protected seller routes yahan rakhein.
+    //     // Products, dashboard, orders, store settings, etc.
+    // });
+
 });

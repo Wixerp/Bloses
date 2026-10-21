@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureSellerIsNotSuspended;
 use Spatie\Permission\Middleware\{
     RoleMiddleware,
     PermissionMiddleware,
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'seller.not_suspended' => EnsureSellerIsNotSuspended::class,
         ]);
     })
 

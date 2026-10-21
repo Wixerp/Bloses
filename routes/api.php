@@ -6,10 +6,15 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\CloudinaryController;
 use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController, PasswordResetController};
 use App\Http\Controllers\Api\Product\ProductController;
-use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController, AdminEarningController, AdminPayoutController,
+use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController, AdminEarningController,
+AdminPayoutController,
 AdminTransactionController, AdminCommissionController, AdminRefundController, AdminCodSettlementController,
 AdminPaymentSettingsController, AdminOrderController, AdminSellerDocumentController, AdminReturnController,
-AdminProductApprovalController, AdminAttributeController, AdminInventoryController};
+AdminProductApprovalController, AdminAttributeController, AdminInventoryController, AdminSellerController,
+SellerPerformanceController, StoreVerificationController, SellerSuspensionController, AdminShipmentController,
+ShippingMethodController, ShippingZoneController, FailedDeliveryController, AdminShippingRateController,
+OrderReportController, SellerReportController, ProductInventoryReportController, CommissionPayoutReportController,
+CustomerReportController, ShippingConfigurationController, AdminProductQuestionController, AdminNotificationController};
 use App\Http\Controllers\Api\Admin\User\UserController;
 use App\Http\Controllers\Api\Admin\Coupon\CouponController;
 use App\Http\Controllers\Api\Support\AdminSupportController;
@@ -144,6 +149,78 @@ Route::prefix('admin')->group(function () {
         Route::get('/inventory/summary', [AdminInventoryController::class, 'summary',]);
         Route::put('/inventory/variants/{variantId}/stock', [AdminInventoryController::class, 'adjustStock',]);
         Route::get('/inventory/variants/{variantId}/history', [AdminInventoryController::class, 'history',]);
+
+        Route::get('/sellers', [AdminSellerController::class, 'index']);
+        Route::get('/sellers/{sellerId}', [AdminSellerController::class, 'show']);
+
+        Route::get('/store-verifications', [StoreVerificationController::class, 'index']);
+        Route::get('/store-verifications/{storeId}', [StoreVerificationController::class, 'show']);
+        Route::patch('/store-verifications/{storeId}', [StoreVerificationController::class, 'update']);
+
+        Route::get('/seller-performance', [SellerPerformanceController::class, 'index']);
+        Route::get('/seller-performance/{sellerId}', [SellerPerformanceController::class, 'show']);
+
+        Route::get('/seller-suspensions', [SellerSuspensionController::class, 'index']);
+        Route::get('/seller-suspensions/{sellerId}', [SellerSuspensionController::class, 'show']);
+        Route::patch('/seller-suspensions/{sellerId}/suspend', [SellerSuspensionController::class, 'suspend']);
+        Route::patch('/seller-suspensions/{sellerId}/reactivate', [SellerSuspensionController::class, 'reactivate']);
+
+        Route::get('/shipments', [AdminShipmentController::class, 'index',]);
+        Route::get('/shipment-tracking', [ShipmentTrackingController::class, 'track']);
+
+        Route::get('/shipping-rates', [AdminShippingRateController::class, 'index']);
+
+        Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
+        Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
+        Route::get('/shipping-methods/{id}', [ShippingMethodController::class, 'show'])->whereNumber('id');
+        Route::put('/shipping-methods/{id}', [ShippingMethodController::class, 'update'])->whereNumber('id');
+        Route::patch('/shipping-methods/{id}/status', [ShippingMethodController::class, 'updateStatus'])->whereNumber('id');
+        Route::delete('/shipping-methods/{id}', [ShippingMethodController::class, 'destroy'])->whereNumber('id');
+
+        Route::get('/shipping-zones', [ShippingZoneController::class, 'index']);
+        Route::post('/shipping-zones', [ShippingZoneController::class, 'store']);
+        Route::get('/shipping-zones/{id}', [ShippingZoneController::class, 'show'])->whereNumber('id');
+        Route::put('/shipping-zones/{id}', [ShippingZoneController::class, 'update'])->whereNumber('id');
+        Route::patch('/shipping-zones/{id}/status', [ShippingZoneController::class, 'updateStatus'])->whereNumber('id');
+        Route::delete('/shipping-zones/{id}', [ShippingZoneController::class, 'destroy'])->whereNumber('id');
+
+        Route::get('/failed-deliveries', [FailedDeliveryController::class, 'index']);
+        Route::get('/failed-deliveries/{id}', [FailedDeliveryController::class, 'show']);
+        Route::patch('/failed-deliveries/{id}/status', [FailedDeliveryController::class, 'updateStatus']);
+
+        Route::get('/buyer-seller-questions/', [AdminProductQuestionController::class, 'index']);
+        Route::get('/buyer-seller-questions/{id}', [AdminProductQuestionController::class, 'show'])->whereNumber('id');
+        Route::patch('/buyer-seller-questions/{id}/approval', [AdminProductQuestionController::class, 'updateApproval'])->whereNumber('id');
+
+        Route::get('/notifications', [AdminNotificationController::class, 'index']);
+        Route::get('/notifications/{id}', [AdminNotificationController::class, 'show'])->whereNumber('id');
+        Route::post('/notifications', [AdminNotificationController::class, 'store']);
+        Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy'])->whereNumber('id');
+        Route::prefix('announcements')->group(function () {
+            Route::get('/', [AdminNotificationController::class, 'announcements']);
+            Route::post('/', [AdminNotificationController::class, 'storeAnnouncement']);
+        });
+
+        Route::get('/sales-reports', [SalesReportController::class, 'index']);
+        Route::get('/order-reports', [OrderReportController::class, 'index']);
+        Route::get('/seller-reports', [SellerReportController::class, 'index']);
+        Route::get('/product-inventory-reports', [ProductInventoryReportController::class, 'index']);
+        Route::get('/commission-payout-reports', [CommissionPayoutReportController::class, 'index']);
+        Route::get('/customer-reports', [CustomerReportController::class, 'index']);
+
+        Route::get('/shipping-configuration', [ShippingConfigurationController::class, 'index']);
+        Route::get('/shipping-methods', [ShippingConfigurationController::class, 'methods']);
+        Route::post('/shipping-methods', [ShippingConfigurationController::class, 'storeMethod']);
+        Route::put('/shipping-methods/{id}', [ShippingConfigurationController::class, 'updateMethod']);
+        Route::delete('/shipping-methods/{id}', [ShippingConfigurationController::class, 'destroyMethod']);
+        Route::get('/shipping-zones', [ShippingConfigurationController::class, 'zones']);
+        Route::post('/shipping-zones', [ShippingConfigurationController::class, 'storeZone']);
+        Route::put('/shipping-zones/{id}', [ShippingConfigurationController::class, 'updateZone']);
+        Route::delete('/shipping-zones/{id}', [ShippingConfigurationController::class, 'destroyZone']);
+        Route::get('/shipping-rates', [ShippingConfigurationController::class, 'rates']);
+        Route::post('/shipping-rates', [ShippingConfigurationController::class, 'storeRate']);
+        Route::put('/shipping-rates/{id}', [ShippingConfigurationController::class, 'updateRate']);
+        Route::delete('/shipping-rates/{id}', [ShippingConfigurationController::class, 'destroyRate']);
     });
 
 });
