@@ -8,7 +8,8 @@ use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController, Passwor
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Admin\{ProductsController, ReviewController, OrderController, AdminEarningController, AdminPayoutController,
 AdminTransactionController, AdminCommissionController, AdminRefundController, AdminCodSettlementController,
-AdminPaymentSettingsController, AdminOrderController, AdminSellerDocumentController};
+AdminPaymentSettingsController, AdminOrderController, AdminSellerDocumentController, AdminReturnController,
+AdminProductApprovalController, AdminAttributeController, AdminInventoryController};
 use App\Http\Controllers\Api\Admin\User\UserController;
 use App\Http\Controllers\Api\Admin\Coupon\CouponController;
 use App\Http\Controllers\Api\Support\AdminSupportController;
@@ -62,7 +63,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/reviews/{id}', [ReviewController::class, 'show']);
         Route::put('/reviews/{id}', [ReviewController::class, 'update']);
         Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
-        
+
         Route::get('/orders/details', [AdminOrderController::class, 'index']);
 
         Route::get('/orders', [OrderController::class, 'index']);
@@ -116,6 +117,33 @@ Route::prefix('admin')->group(function () {
         Route::get('/seller-documents/{documentId}/view', [AdminSellerDocumentController::class, 'view']);
         Route::get('/seller-documents/{documentId}/download', [AdminSellerDocumentController::class, 'download']);
         Route::patch('/seller-documents/{documentId}/status', [AdminSellerDocumentController::class, 'updateStatus']);
+
+        Route::get('/returns', [AdminReturnController::class, 'index']);
+        Route::get('/returns/{returnId}', [AdminReturnController::class, 'show'])->whereNumber('returnId');
+        Route::patch('/returns/{returnId}/status', [AdminReturnController::class, 'updateStatus'])->whereNumber('returnId');
+        Route::patch('/orders/{orderId}/cancel', [AdminReturnController::class, 'cancelOrder'])->whereNumber('orderId');
+
+        Route::get('/product-approvals', [AdminProductApprovalController::class, 'index']);
+        Route::get('/product-approvals/{id}', [AdminProductApprovalController::class, 'show']);
+        Route::patch('/product-approvals/{id}/approve', [AdminProductApprovalController::class, 'approve']);
+        Route::patch('/product-approvals/{id}/reject', [AdminProductApprovalController::class, 'reject']);
+
+        Route::get('/attributes', [AdminAttributeController::class, 'index']);
+        Route::post('/attributes', [AdminAttributeController::class, 'store']);
+        Route::get('/attributes/variants', [AdminAttributeController::class, 'variants']);
+        Route::get('/attributes/variants/{variantId}', [AdminAttributeController::class, 'variantAttributes',]);
+        Route::get('/attributes/{id}', [AdminAttributeController::class, 'show']);
+        Route::put('/attributes/{id}', [AdminAttributeController::class, 'update']);
+        Route::delete('/attributes/{id}', [AdminAttributeController::class, 'destroy']);
+        Route::post('/attributes/{id}/values', [AdminAttributeController::class, 'storeValue',]);
+        Route::put('/attributes/{id}/values/{valueId}', [AdminAttributeController::class, 'updateValue',]);
+        Route::delete('/attributes/{id}/values/{valueId}', [AdminAttributeController::class, 'destroyValue',]);
+        Route::put('/attributes/variants/{variantId}/attributes', [AdminAttributeController::class, 'syncVariantAttributes']);
+
+        Route::get('/inventory', [AdminInventoryController::class, 'index',]);
+        Route::get('/inventory/summary', [AdminInventoryController::class, 'summary',]);
+        Route::put('/inventory/variants/{variantId}/stock', [AdminInventoryController::class, 'adjustStock',]);
+        Route::get('/inventory/variants/{variantId}/history', [AdminInventoryController::class, 'history',]);
     });
 
 });

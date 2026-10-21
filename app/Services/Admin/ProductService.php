@@ -84,7 +84,8 @@ class ProductService
 
         $this->applyProductFilters($query, $filters);
 
-        return $query->orderByDesc('products.created_at')->paginate($filters['per_page'] ?? 20);
+        return $query->orderByDesc('products.created_at')->get();
+        // paginate($filters['per_page'] ?? 20)
     }
 
     private function applyProductFilters($query, array $filters): void

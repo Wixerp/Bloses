@@ -89,6 +89,7 @@ Route::prefix('mobile')->group(function () {
             Route::get('/refunds/{id}', [SellerRefundController::class, 'show']);
 
             Route::get('/dashboard', [SellerDashboardController::class, 'index']);
+            Route::get('/profile-show-detail', [SellerController::class, 'profileshowdetail']);
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 
         });

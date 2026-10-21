@@ -17,6 +17,9 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories')->restrictOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained('brands')->nullOnDelete();
             $table->string('name', 255);
+            $table->text('admin_note')->nullable();
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->string('slug', 280);
             $table->text('short_description')->nullable();
             $table->longText('description')->nullable();
