@@ -14,7 +14,8 @@ AdminProductApprovalController, AdminAttributeController, AdminInventoryControll
 SellerPerformanceController, StoreVerificationController, SellerSuspensionController, AdminShipmentController,
 ShippingMethodController, ShippingZoneController, FailedDeliveryController, AdminShippingRateController,
 OrderReportController, SellerReportController, ProductInventoryReportController, CommissionPayoutReportController,
-CustomerReportController, ShippingConfigurationController, AdminProductQuestionController, AdminNotificationController};
+CustomerReportController, ShippingConfigurationController, AdminProductQuestionController, AdminNotificationController,
+LocationController, TaxSettingController, EmailSmsSettingController, SalesReportController, AuditLogController};
 use App\Http\Controllers\Api\Admin\User\UserController;
 use App\Http\Controllers\Api\Admin\Coupon\CouponController;
 use App\Http\Controllers\Api\Support\AdminSupportController;
@@ -221,6 +222,30 @@ Route::prefix('admin')->group(function () {
         Route::post('/shipping-rates', [ShippingConfigurationController::class, 'storeRate']);
         Route::put('/shipping-rates/{id}', [ShippingConfigurationController::class, 'updateRate']);
         Route::delete('/shipping-rates/{id}', [ShippingConfigurationController::class, 'destroyRate']);
+        
+        foreach (['countries', 'states', 'cities'] as $resource) {
+            Route::get("/{$resource}", [LocationController::class, 'index'])->defaults('resource', $resource);
+            Route::post("/{$resource}", [LocationController::class, 'store'])->defaults('resource', $resource);
+            Route::get("/{$resource}/{id}", [LocationController::class, 'show'])->defaults('resource', $resource);
+            Route::put("/{$resource}/{id}", [LocationController::class, 'update'])->defaults('resource', $resource);
+            Route::patch("/{$resource}/{id}", [LocationController::class, 'update'])->defaults('resource', $resource);
+            Route::delete("/{$resource}/{id}", [LocationController::class, 'destroy'])->defaults('resource', $resource);
+        }
+
+        Route::get('/tax-settings', [TaxSettingController::class, 'index']);
+        Route::post('/tax-settings', [TaxSettingController::class, 'store']);
+        Route::get('/tax-settings/{id}', [TaxSettingController::class, 'show']);
+        Route::put('/tax-settings/{id}', [TaxSettingController::class, 'update']);
+        Route::patch('/tax-settings/{id}', [TaxSettingController::class, 'update']);
+        Route::delete('/tax-settings/{id}', [TaxSettingController::class, 'destroy']);
+        
+        Route::get('/email-sms-settings', [EmailSmsSettingController::class, 'index']);
+        Route::put('/email-sms-settings', [EmailSmsSettingController::class, 'update']);
+        Route::post('/email-sms-settings/test-email', [EmailSmsSettingController::class, 'testEmail']);
+        Route::post('/email-sms-settings/test-sms', [EmailSmsSettingController::class, 'testSms']);
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index',]);
+        Route::get('/audit-logs/{id}', [AuditLogController::class, 'show',])->whereNumber('id');
     });
 
 });
