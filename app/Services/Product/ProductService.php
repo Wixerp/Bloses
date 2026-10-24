@@ -10,28 +10,6 @@ use Illuminate\Support\Str;
 
 class ProductService
 {
-    // public function getAll()
-    // {
-    //     $sellerId = auth()->id();
-
-    //     $products = DB::table('products')
-    //         ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
-    //         ->leftJoin('master_types as status','status.id','=','products.status_id')
-    //         ->where('seller_store_settings.seller_id', $sellerId)
-    //         ->select(
-    //             'products.id','products.product_code','products.name',
-    //             'seller_store_settings.store_name as store_name',
-    //             'status.description as status','products.is_featured','products.is_active','products.published_at',
-    //             DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
-    //             DB::raw("(SELECT CONCAT( '" . rtrim(config('app.url'), '/') . "/storage/', pi.image_path)
-    //                     FROM product_images pi WHERE pi.product_id = products.id
-    //                     ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1
-    //                 ) AS image
-    //             ")
-    //         )->orderByDesc('products.id')->get();
-
-    //     return $products;
-    // }
     public function getAll()
     {
         $userId = auth()->id();
@@ -906,67 +884,215 @@ class ProductService
         return DB::table('reviews')->where('id', $reviewid)->first();
     }
 
+    // public function getBuyerProducts()
+    // {
+    //     $products = DB::table('products')
+    //         ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
+    //         ->leftJoin('categories','categories.id','=','products.category_id')
+    //         ->leftJoin('master_types as status','status.id','=','products.status_id')
+    //         ->select(['products.id','products.product_code','products.name','products.slug',
+    //             'products.category_id','categories.name as category_name',
+    //             'products.is_deal','products.deal_start_at','products.deal_end_at',
+    //             DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
+    //             'products.store_id','seller_store_settings.store_name',
+    //             'products.price','products.list_price','products.discount','products.tax',
+    //             'products.is_featured','products.created_at','products.is_active','products.published_at',
+    //             DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand_name"),
+    //             DB::raw("
+    //                 (SELECT CONCAT( '" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
+    //                     WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image
+    //             "),
+    //             DB::raw("COALESCE((SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.product_id = products.id), 0) AS rating"),
+    //             DB::raw("(SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id) AS reviews_count"),
+    //             DB::raw("CASE WHEN COALESCE(CAST(NULLIF(products.qty, '') AS INTEGER), 0) > 0 THEN true ELSE false END AS inStock"),
+    //         ])->where('products.is_active', true)->whereNotNull('products.published_at')->where('status.description', 'Active')
+    //         ->orderByDesc('products.id')->get();
+
+    //     $startOfWeek = now()->startOfWeek();
+    //     $endOfWeek = now()->endOfWeek();
+
+    //     $hotProductIds = DB::table('order_items')->join('orders','orders.id','=','order_items.order_id')
+    //         ->whereBetween('orders.created_at', [$startOfWeek, $endOfWeek,])
+    //         ->whereNotIn('orders.status_id', function ($query) {
+    //             $query->select('id')->from('master_types')->where('key', 'order_status')->whereIn('value', ['cancelled',]);
+    //         })->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as sold_quantity'))
+    //         ->groupBy('order_items.product_id')->orderByDesc('sold_quantity')->get();
+
+    //     $hotProducts = collect();
+
+    //     foreach ($hotProductIds as $hot) {
+    //         $product = $products->firstWhere('id', $hot->product_id);
+
+    //         if ($product) {
+    //             $product->sold_quantity = (int) $hot->sold_quantity;
+    //             $hotProducts->push($product);
+    //         }
+    //     }
+
+    //     $newArrivals = $products
+    //         ->filter(function ($product) use ($startOfWeek, $endOfWeek) {
+    //             return $product->created_at >= $startOfWeek && $product->created_at <= $endOfWeek;
+    //         })->sortByDesc('created_at')->values();
+
+    //     return [
+    //         'featured_products' => $products->where('is_featured', true)->values(),
+    //         'deals_of_the_day' => $products->where('is_deal', true)
+    //             ->filter(function ($product) {
+    //                 return $product->deal_start_at <= now() && $product->deal_end_at >= now();
+    //             })->values(),
+    //         'hot_products' => $hotProducts->values(),
+    //         'new_arrivals' => $newArrivals,
+    //         'products' => $products->where('is_featured', false)->values(),
+    //     ];
+    // }
     public function getBuyerProducts()
-    {
-        $products = DB::table('products')
-            ->leftJoin('seller_store_settings','seller_store_settings.id','=','products.store_id')
-            ->leftJoin('categories','categories.id','=','products.category_id')
-            ->leftJoin('master_types as status','status.id','=','products.status_id')
-            ->select(['products.id','products.product_code','products.name','products.slug',
-                'products.category_id','categories.name as category_name',
-                'products.is_deal','products.deal_start_at','products.deal_end_at',
-                DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
-                'products.store_id','seller_store_settings.store_name',
-                'products.price','products.list_price','products.discount','products.tax',
-                'products.is_featured','products.created_at','products.is_active','products.published_at',
-                DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand_name"),
-                DB::raw("
-                    (SELECT CONCAT( '" . config('app.url') . "/storage/', pi.image_path) FROM product_images pi
-                        WHERE pi.product_id = products.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image
-                "),
-                DB::raw("COALESCE((SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.product_id = products.id), 0) AS rating"),
-                DB::raw("(SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id) AS reviews_count"),
-                DB::raw("CASE WHEN COALESCE(CAST(NULLIF(products.qty, '') AS INTEGER), 0) > 0 THEN true ELSE false END AS inStock"),
-            ])->where('products.is_active', true)->whereNotNull('products.published_at')->where('status.description', 'Active')
-            ->orderByDesc('products.id')->get();
+{
+    $products = DB::table('products')
+        ->leftJoin('seller_store_settings', 'seller_store_settings.id', '=', 'products.store_id')
+        ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+        ->leftJoin('master_types as status', 'status.id', '=', 'products.status_id')
+        ->select([
+            'products.id',
+            'products.product_code',
+            'products.name',
+            'products.slug',
+            'products.category_id',
+            'categories.name as category_name',
+            'products.is_deal',
+            'products.deal_start_at',
+            'products.deal_end_at',
+            DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand"),
+            'products.store_id',
+            'seller_store_settings.store_name',
+            'products.price',
+            'products.list_price',
+            'products.discount',
+            'products.tax',
+            'products.is_featured',
+            'products.created_at',
+            'products.is_active',
+            'products.published_at',
+            DB::raw("CASE WHEN products.brand IS NOT NULL AND products.brand != '' THEN products.brand ELSE 'No Brand' END AS brand_name"),
+            DB::raw("
+                (SELECT CONCAT('" . config('app.url') . "/storage/', pi.image_path)
+                 FROM product_images pi
+                 WHERE pi.product_id = products.id
+                 ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                 LIMIT 1) AS image
+            "),
+            DB::raw("COALESCE((SELECT ROUND(AVG(r.rating)::numeric, 1) FROM reviews r WHERE r.product_id = products.id), 0) AS rating"),
+            DB::raw("(SELECT COUNT(*) FROM reviews r WHERE r.product_id = products.id) AS reviews_count"),
+            DB::raw("CASE WHEN COALESCE(CAST(NULLIF(products.qty, '') AS INTEGER), 0) > 0 THEN true ELSE false END AS inStock"),
+        ])
+        ->where('products.is_active', true)
+        ->whereNotNull('products.published_at')
+        ->where('status.description', 'Active')
+        ->orderByDesc('products.id')
+        ->get();
 
-        $startOfWeek = now()->startOfWeek();
-        $endOfWeek = now()->endOfWeek();
+    $startOfWeek = now()->startOfWeek();
+    $endOfWeek   = now()->endOfWeek();
 
-        $hotProductIds = DB::table('order_items')->join('orders','orders.id','=','order_items.order_id')
-            ->whereBetween('orders.created_at', [$startOfWeek, $endOfWeek,])
+    // ===================== HOT PRODUCTS =====================
+    // Pehle is week ke top selling
+    $hotProductIds = DB::table('order_items')
+        ->join('orders', 'orders.id', '=', 'order_items.order_id')
+        ->whereBetween('orders.created_at', [$startOfWeek, $endOfWeek])
+        ->whereNotIn('orders.status_id', function ($query) {
+            $query->select('id')
+                ->from('master_types')
+                ->where('key', 'order_status')
+                ->whereIn('value', ['cancelled']);
+        })
+        ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as sold_quantity'))
+        ->groupBy('order_items.product_id')
+        ->orderByDesc('sold_quantity')
+        ->limit(20)
+        ->get();
+
+    // Agar is week kuch nahi mila → all-time top selling fallback
+    if ($hotProductIds->isEmpty()) {
+        $hotProductIds = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereNotIn('orders.status_id', function ($query) {
-                $query->select('id')->from('master_types')->where('key', 'order_status')->whereIn('value', ['cancelled',]);
-            })->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as sold_quantity'))
-            ->groupBy('order_items.product_id')->orderByDesc('sold_quantity')->get();
+                $query->select('id')
+                    ->from('master_types')
+                    ->where('key', 'order_status')
+                    ->whereIn('value', ['cancelled']);
+            })
+            ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as sold_quantity'))
+            ->groupBy('order_items.product_id')
+            ->orderByDesc('sold_quantity')
+            ->limit(20)
+            ->get();
+    }
 
-        $hotProducts = collect();
+    $hotProducts = collect();
 
-        foreach ($hotProductIds as $hot) {
-            $product = $products->firstWhere('id', $hot->product_id);
-
-            if ($product) {
-                $product->sold_quantity = (int) $hot->sold_quantity;
-                $hotProducts->push($product);
-            }
+    foreach ($hotProductIds as $hot) {
+        $product = $products->firstWhere('id', $hot->product_id);
+        if ($product) {
+            $product->sold_quantity = (int) $hot->sold_quantity;
+            $hotProducts->push($product);
         }
+    }
+
+    // Agar ab bhi empty → random active products as hot
+    if ($hotProducts->isEmpty()) {
+        $hotProducts = $products->shuffle()->take(12)->values();
+    }
+
+    // ===================== NEW ARRIVALS =====================
+    // Is week ke products
+    $newArrivals = $products
+        ->filter(function ($product) use ($startOfWeek, $endOfWeek) {
+            return $product->created_at >= $startOfWeek
+                && $product->created_at <= $endOfWeek;
+        })
+        ->sortByDesc('created_at')
+        ->values();
+
+    // Agar is week koi nahi → last 30 days
+    if ($newArrivals->isEmpty()) {
+        $thirtyDaysAgo = now()->subDays(30);
 
         $newArrivals = $products
-            ->filter(function ($product) use ($startOfWeek, $endOfWeek) {
-                return $product->created_at >= $startOfWeek && $product->created_at <= $endOfWeek;
-            })->sortByDesc('created_at')->values();
-
-        return [
-            'featured_products' => $products->where('is_featured', true)->values(),
-            'deals_of_the_day' => $products->where('is_deal', true)
-                ->filter(function ($product) {
-                    return $product->deal_start_at <= now() && $product->deal_end_at >= now();
-                })->values(),
-            'hot_products' => $hotProducts->values(),
-            'new_arrivals' => $newArrivals,
-            'products' => $products->where('is_featured', false)->values(),
-        ];
+            ->filter(function ($product) use ($thirtyDaysAgo) {
+                return $product->created_at >= $thirtyDaysAgo;
+            })
+            ->sortByDesc('created_at')
+            ->take(20)
+            ->values();
     }
+
+    // Agar ab bhi empty → latest published products
+    if ($newArrivals->isEmpty()) {
+        $newArrivals = $products
+            ->sortByDesc('published_at')
+            ->take(20)
+            ->values();
+    }
+
+    // ===================== DEALS =====================
+    $deals = $products
+        ->where('is_deal', true)
+        ->filter(function ($product) {
+            if (!$product->deal_start_at || !$product->deal_end_at) {
+                return false;
+            }
+            return $product->deal_start_at <= now()
+                && $product->deal_end_at >= now();
+        })
+        ->values();
+
+    return [
+        'featured_products' => $products->where('is_featured', true)->values(),
+        'deals_of_the_day'   => $deals,
+        'hot_products'      => $hotProducts->values(),
+        'new_arrivals'      => $newArrivals,
+        'products'          => $products->where('is_featured', false)->values(),
+    ];
+}
 
     public function reviewLike(array $data)
     {

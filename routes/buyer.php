@@ -12,7 +12,10 @@ use App\Http\Controllers\Api\Support\BuyerSellerChatController;
 
 Route::prefix('buyer')->group(function () {
 
-    Route::post('/register', [AuthController::class, 'register']);
+    // Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register',]);
+    Route::post('/verify-otp', [AuthController::class, 'verifyRegistrationOtp',]);
+    Route::post('/resend-otp', [AuthController::class, 'resendRegistrationOtp']);
     Route::post('/login', [AuthController::class, 'login']);
 
     Route::middleware(['auth:web', 'role:buyer'])->group(function () {

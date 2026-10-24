@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\Auth\Buyer\AuthController as BuyerAuthController;
 use App\Http\Controllers\Api\Master\MasterTypeController as MasterTypeController;
 use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController, SellerDashboardController,
 SellerPaymentSettingsController, SellerCodSettlementController, SellerTransactionController, SellerCommissionController,
-SellerRefundController};
+SellerRefundController, StoreManagementController, BusinessVerificationController, SellerReportController,
+SellerMarketingController};
+use App\Http\Controllers\SocialIntegrationController;
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
 use App\Http\Controllers\Api\Product\ProductController;
@@ -90,6 +92,41 @@ Route::prefix('mobile')->group(function () {
 
             Route::get('/dashboard', [SellerDashboardController::class, 'index']);
             Route::get('/profile-show-detail', [SellerController::class, 'profileshowdetail']);
+
+            Route::get('/store', [StoreManagementController::class, 'show']);
+            Route::put('/store', [StoreManagementController::class, 'update']);
+
+            Route::get('/verification', [BusinessVerificationController::class, 'show']);
+            Route::put('/verification/business', [BusinessVerificationController::class, 'updateBusiness']);
+            Route::get('/verification/addresses', [BusinessVerificationController::class, 'addresses']);
+            Route::post('/verification/addresses', [BusinessVerificationController::class, 'saveAddress']);
+            Route::put('/verification/addresses/{id}', [BusinessVerificationController::class, 'updateAddress']);
+            Route::get('/verification/bank-accounts', [BusinessVerificationController::class, 'bankAccounts']);
+            Route::post('/verification/bank-accounts', [BusinessVerificationController::class, 'saveBankAccount']);
+            Route::post('/verification/documents', [BusinessVerificationController::class, 'uploadDocument']);
+            Route::delete('/verification/documents/{id}', [BusinessVerificationController::class, 'deleteDocument']);
+
+            Route::prefix('reports')->group(function () {
+                Route::get('/summary', [SellerReportController::class, 'summary']);
+                Route::get('/sales-by-date', [SellerReportController::class, 'salesByDate']);
+                Route::get('/orders', [SellerReportController::class, 'orders']);
+                Route::get('/best-selling-products', [SellerReportController::class, 'bestSellingProducts']);
+                Route::get('/inventory', [SellerReportController::class, 'inventory']);
+                Route::get('/order-status-summary', [SellerReportController::class, 'orderStatusSummary']);
+            });
+
+            Route::get('/marketing/products', [SellerMarketingController::class, 'products']);
+            Route::patch('/marketing/products/{productId}/promotion', [SellerMarketingController::class, 'updatePromotion'])->whereNumber('productId');
+            Route::get('/marketing/coupon-usage', [SellerMarketingController::class, 'couponUsageReport']);
+
+            Route::get('/connect/{provider}', [SocialIntegrationController::class, 'start',])->where('provider', 'meta|tiktok');
+            Route::get('/accounts', [SocialIntegrationController::class, 'accounts',]);
+            Route::delete('/accounts/{id}', [SocialIntegrationController::class, 'disconnect',])->whereNumber('id');
+            Route::get('/posts', [SocialIntegrationController::class, 'posts',]);
+            Route::post('/accounts/{id}/sync', [SocialIntegrationController::class,  'syncPosts',])->whereNumber('id');
+            Route::patch('/posts/{postId}/product', [SocialIntegrationController::class, 'mapProduct',])->whereNumber('postId');
+            Route::get('/sync-history', [SocialIntegrationController::class, 'syncHistory',]);
+
             Route::post('/logout', [SellerAuthController::class,'mobileLogout']);
 
         });

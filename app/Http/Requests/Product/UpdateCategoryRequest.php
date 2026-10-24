@@ -41,7 +41,7 @@ class UpdateCategoryRequest extends FormRequest
             'image' => [
                 'nullable',
                 'image',
-                'mimes:jpg,jpeg,png,webp',
+                'mimes:sometimes|image|mimes:jpeg,png,jpg,webp|max:2048',
                 'max:5120',
             ],
 

@@ -18,24 +18,83 @@ class AuthController extends Controller
     ) {
     }
 
-    public function register(BuyerRegisterRequest $request): JsonResponse
+    // public function register(BuyerRegisterRequest $request): JsonResponse
+    // {
+    //     $user = $this->authService->register(
+    //         $request->name,
+    //         $request->email,
+    //         $request->password
+    //     );
+
+    //     return ApiResponse::success(
+    //         'Buyer registered successfully.',
+    //         [
+    //             'id' => $user->id,
+    //             'name' => $user->name,
+    //             'email' => $user->email,
+    //             'phone' => $user->phone,
+    //             'role' => $user->getRoleNames()->first(),
+    //         ]
+    //     );
+    // }
+    public function register(Request $request)
     {
-        $user = $this->authService->register(
-            $request->name,
-            $request->email,
-            $request->password
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $result = $this->authService->sendRegistrationOtp(
+            $validated['name'],
+            $validated['email'],
+            $validated['password']
         );
 
-        return ApiResponse::success(
-            'Buyer registered successfully.',
-            [
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent to your email. Verify it to complete registration.',
+            'data' => $result,
+        ], 200);
+    }
+
+    public function verifyRegistrationOtp(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'digits:6'],
+        ]);
+
+        $user = $this->authService->verifyRegistrationOtp(
+            $validated['email'],
+            $validated['otp']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified and seller registered successfully.',
+            'data' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->getRoleNames()->first(),
-            ]
-        );
+                'role' => 'seller',
+            ],
+        ], 201);
+    }
+
+    public function resendRegistrationOtp(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $result = $this->authService->resendRegistrationOtp($validated['email']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP resent successfully.',
+            'data'    => $result,
+        ], 200);
     }
 
     public function mobileRegister(BuyerRegisterRequest $request): JsonResponse

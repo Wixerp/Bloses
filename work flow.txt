@@ -1,0 +1,89 @@
+1. Ab tak humne kya kya kiya hai?
+
+Authentication system ==============================
+Kaam hua hai ---------------------------
+Admin, Buyer aur Seller login.
+Laravel Sanctum cookie-based authentication.
+CSRF cookie aur Axios withCredentials.
+Mobile API ke liye separate mobileapi.php aur token authentication.
+Zustand session management aur /me endpoint.
+Refresh ke baad logout hone ka issue debug kiya tha; final fix verify karna baqi hai.
+
+Seller management =========================
+Kaam hua hai -------------------------
+Seller registration aur login routes.
+Seller approval workflow.
+Seller status aur admin note.
+Store aur seller relationship.
+PostgreSQL trigger aur Reverb ke through seller status changes ki notification par kaam.
+
+Products aur variants ===================
+Kaam hua hai --------------------
+Product create, update aur detail APIs par kaam.
+Categories aur brands ka admin-managed structure.
+Product images aur Cloudinary URLs.
+Variants: size, color, SKU, price aur stock.
+Product listing mein store name, status aur primary image dikhane ka structure.
+Kuch validation aur database errors ko debug kiya tha.
+
+Checkout aur orders =======================
+Partial / verify karna hai ----------------------
+COD checkout payload aur order items.
+Buyer address save karne ka flow.
+Order number generation par kaam.
+Address type foreign-key error aaya tha; aapne direct save karne ko kaha tha.
+Complete end-to-end checkout testing confirm nahi hai.
+
+Shipping aur shipments =================
+Partial / latest work ----------
+shipments, shipment_items, shipping_methods aur shipping_rates ka structure discuss kiya.
+ShipmentService aur ShipmentController par kaam.
+Seller-wise shipment creation aur seller ID handling.
+getShipments() mein seller name aur buyer name add karne ki requirement.
+shipping_zones ko filhaal skip karne ka decision.
+Payment method ID save karne ka point discuss hua tha.
+
+Support system ============
+API work discussed --------------
+SupportController aur SupportService.
+Support ticket store API ke liye frontend payload aur Postman request banane par kaam.
+Is module ka complete working test abhi confirm nahi hai.
+
+
+==================================================
+2. Abhi kaun se important kaam baqi hain?
+
+Ye available context ke mutabiq pending ya verification ke liye hain; zaroori nahi ke har cheez bilkul shuru se baqi ho.
+
+Module  ===              Agla kaam
+Authentication  ===      Refresh/session issue ka final test
+Seller  ===              Approval permissions aur seller dashboard access verify
+Products  ===            Create/update/list/detail APIs ka end-to-end test
+Orders  ===              Checkout, address aur order creation test
+Shipping  ===            Seller name + buyer name response, shipment status aur tracking
+Payments  ===            Payment transactions aur payment status workflow
+Commission  ===          Seller-wise commission calculation
+Seller payouts  ===      Seller earning, ledger aur payout workflow
+Refunds  ===             Cancellation, returns aur refund processing
+Admin panel  ===         Complete sidebar, dashboard metrics aur reports
+Support  ===             Ticket creation aur admin response workflow
+Security  ===            Role permissions, audit logs aur financial access controls
+
+3. Payment ke hawale se hum kahan tak pohanche hain?
+Abhi tak available context mein payment system ki complete implementation confirm nahi hai.
+Humne COD checkout payload discuss kiya hai aur shipment create karte waqt payment method ID kahan save karni hai,
+ye sawal bhi uthaya tha.
+
+Payment system ke ye parts abhi verify/implement karne hain:
+
+payment_methods aur payments ka database structure.
+Payment success, pending aur failed statuses.
+Marketplace commission calculation.
+Seller ledger aur payable balance.
+Seller payout approval aur transfer records.
+Refund aur COD reconciliation.
+
+4. Ab humein kaise aage chalna chahiye?
+
+Bhai jaan, meri recommendation hai ke pehle existing code ka status verify karein, naya module seedha banane na lag jaayein.
+Isse duplicate tables, controllers aur APIs banne se bachenge.

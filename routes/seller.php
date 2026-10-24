@@ -5,7 +5,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Auth\Seller\AuthController;
 use App\Http\Controllers\Api\Seller\{SellerController, SellerRegistrationController, SellerEarningController,
 SellerPayoutController, SellerBankAccountController, SellerDashboardController, SellerPaymentSettingsController,
-SellerCodSettlementController, SellerTransactionController, SellerCommissionController, SellerRefundController};
+SellerCodSettlementController, SellerTransactionController, SellerCommissionController, SellerRefundController,
+StoreManagementController, BusinessVerificationController, SellerMarketingController, SellerReportController};
 use App\Http\Controllers\Api\Inventory\InventoryController;
 use App\Http\Controllers\Api\Master\MasterTypeController;
 use App\Http\Controllers\{SellerCountryController, SellerProvinceController, SellercityController};
@@ -15,18 +16,29 @@ use App\Http\Controllers\Api\Suppliers\SuppliersController;
 use App\Http\Controllers\Api\Shipping\ShipmentController;
 use App\Http\Controllers\Api\Notification\NotificationController;
 use App\Http\Controllers\Api\Support\SupportController;
+use App\Http\Controllers\SocialIntegrationController;
 
 Route::prefix('seller')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
+    // Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register',]);
+    Route::post('/verify-otp', [AuthController::class, 'verifyRegistrationOtp',]);
+    Route::post('/resend-otp', [AuthController::class, 'resendRegistrationOtp']);
     Route::post('/login', [AuthController::class, 'login']);
+
+
 
     Route::middleware(['auth:sanctum', 'role:seller'])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/profile-status', [SellerController::class, 'registrationStatus']);
     });
+    Route::get('/stores/{slug}', [StoreManagementController::class, 'publicProfile']);
+    Route::get('/social/callback/{provider}', [SocialIntegrationController::class, 'callback',])
+    ->where('provider', 'meta|tiktok');
 
 });
+
+
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -110,6 +122,44 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/dashboard', [SellerDashboardController::class, 'index']);
         Route::get('/profile-status-check/{id}', [SellerController::class, 'profilestatscheck']);
+
+        Route::get('/store', [StoreManagementController::class, 'show']);
+        Route::put('/store', [StoreManagementController::class, 'update']);
+
+        Route::get('/verification', [BusinessVerificationController::class, 'show']);
+        Route::put('/verification/business', [BusinessVerificationController::class, 'updateBusiness']);
+        Route::get('/verification/addresses', [BusinessVerificationController::class, 'addresses']);
+        Route::post('/verification/addresses', [BusinessVerificationController::class, 'saveAddress']);
+        Route::put('/verification/addresses/{id}', [BusinessVerificationController::class, 'updateAddress']);
+        Route::get('/verification/bank-accounts', [BusinessVerificationController::class, 'bankAccounts']);
+        Route::post('/verification/bank-accounts', [BusinessVerificationController::class, 'saveBankAccount']);
+        Route::post('/verification/documents', [BusinessVerificationController::class, 'uploadDocument']);
+        Route::delete('/verification/documents/{id}', [BusinessVerificationController::class, 'deleteDocument']);
+
+        Route::prefix('reports')->group(function () {
+            Route::get('/summary', [SellerReportController::class, 'summary']);
+            Route::get('/sales-by-date', [SellerReportController::class, 'salesByDate']);
+            Route::get('/orders', [SellerReportController::class, 'orders']);
+            Route::get('/best-selling-products', [SellerReportController::class, 'bestSellingProducts']);
+            Route::get('/inventory', [SellerReportController::class, 'inventory']);
+            Route::get('/order-status-summary', [SellerReportController::class, 'orderStatusSummary']);
+        });
+
+        Route::prefix('marketing')->group(function () {
+            Route::get('/products', [SellerMarketingController::class, 'products']);
+            Route::patch('/products/{productId}/promotion', [SellerMarketingController::class, 'updatePromotion'])->whereNumber('productId');
+            Route::get('/coupon-usage', [SellerMarketingController::class, 'couponUsageReport']);
+        });
+
+        Route::prefix('social-integration')->group(function () {
+            Route::get('/connect/{provider}', [SocialIntegrationController::class, 'start',])->where('provider', 'meta|tiktok');
+            Route::get('/accounts', [SocialIntegrationController::class, 'accounts',]);
+            Route::delete('/accounts/{id}', [SocialIntegrationController::class, 'disconnect',])->whereNumber('id');
+            Route::get('/posts', [SocialIntegrationController::class, 'posts',]);
+            Route::post('/accounts/{id}/sync', [SocialIntegrationController::class,  'syncPosts',])->whereNumber('id');
+            Route::patch('/posts/{postId}/product', [SocialIntegrationController::class, 'mapProduct',])->whereNumber('postId');
+            Route::get('/sync-history', [SocialIntegrationController::class, 'syncHistory',]);
+        });
     });
 
     Route::get('/profile-show', [SellerController::class, 'profileshow']);

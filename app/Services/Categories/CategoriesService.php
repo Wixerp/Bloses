@@ -3,7 +3,7 @@
 namespace App\Services\Categories;
 
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\{DB, Log};
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -92,62 +92,75 @@ public function getCategories()
         return DB::table('categories')->where('id', $id)->first();
     }
 
-    public function updateCategory(int $id, array $data) {
-        return DB::transaction(function () use ($id, $data) {
+   public function updateCategory(int $id, array $data) {
+    return DB::transaction(function () use ($id, $data) {
 
-            $category = DB::table('categories')->where('id', $id)->first();
+        $category = DB::table('categories')->where('id', $id)->first();
 
-            if (!$category) {
-                abort(404, 'Category not found.');
-            }
+        if (!$category) {
+            abort(404, 'Category not found.');
+        }
 
-            $slug = $category->slug;
+        // ===== DEBUG START =====
+        Log::info('SERVICE: UPDATE START', [
+            'id' => $id,
+            'old_image' => $category->image,
+            'has_image_key' => isset($data['image']),
+            'image_class' => isset($data['image']) ? get_class($data['image']) : null,
+            'is_uploaded_file' => isset($data['image']) && $data['image'] instanceof UploadedFile,
+            'image_original_name' => isset($data['image']) && $data['image'] instanceof UploadedFile
+                ? $data['image']->getClientOriginalName() : null,
+            'image_size' => isset($data['image']) && $data['image'] instanceof UploadedFile
+                ? $data['image']->getSize() : null,
+            'image_valid' => isset($data['image']) && $data['image'] instanceof UploadedFile
+                ? $data['image']->isValid() : null,
+        ]);
+        // ===== DEBUG END =====
 
-            if (isset($data['name']) || isset($data['slug'])) {
-                $slug = $this->generateUniqueSlug(
-                    $data['slug'] ?? $data['name'] ?? $category->name,
-                    $id
-                );
-            }
+        $imagePath = $category->image;
 
-            $imagePath = $category->image;
+        if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
+            $newImagePath = $data['image']->store('categories', 'public');
 
-            if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
-                $newImagePath = $data['image']->store('categories', 'public');
+            // ===== DEBUG START =====
+            Log::info('SERVICE: IMAGE STORED', [
+                'new_path' => $newImagePath,
+                'path_type' => gettype($newImagePath),
+                'file_exists' => $newImagePath
+                    ? Storage::disk('public')->exists($newImagePath)
+                    : false,
+                'full_url' => $newImagePath
+                    ? Storage::disk('public')->url($newImagePath)
+                    : null,
+            ]);
+            // ===== DEBUG END =====
 
-                if ($category->image) {
-                    Storage::disk('public')->delete($category->image);
-                }
-
-                $imagePath = $newImagePath;
-            }
-
-
-            DB::table('categories')->where('id', $id)
-                ->update([
-                    // 'parent_id' => array_key_exists(
-                    //     'parent_id',
-                    //     $data
-                    // )
-                    //     ? $data['parent_id']
-                    //     : $category->parent_id,
-
-                    'name' => $data['name'] ?? $category->name,
-                    'slug' => $slug,
-                    'description' => array_key_exists('description', $data) ? $data['description'] : $category->description,
-                    'image' => $imagePath,
-                    'icon' => array_key_exists('icon', $data) ? $data['icon'] : $category->icon,
-                    'sort_order' => $data['sort_order'] ?? $category->sort_order,
-                    'is_active' => array_key_exists('is_active', $data) ? $data['is_active'] : $category->is_active,
-                    'is_featured' => array_key_exists('is_featured', $data) ? $data['is_featured'] : $category->is_featured,
-                    'updated_at' => now(),
+            if ($category->image) {
+                $deleted = Storage::disk('public')->delete($category->image);
+                Log::info('SERVICE: OLD IMAGE DELETE', [
+                    'old_path' => $category->image,
+                    'deleted' => $deleted,
                 ]);
+            }
 
+            $imagePath = $newImagePath;
+        }
 
-            return DB::table('categories')->where('id', $id)->first();
-        });
-    }
+        // ... update call ...
 
+        $updated = DB::table('categories')->where('id', $id)->first();
+
+        // ===== DEBUG START =====
+        Log::info('SERVICE: AFTER UPDATE', [
+            'db_image_value' => $updated->image,
+            'expected_image' => $imagePath,
+            'match' => $updated->image === $imagePath,
+        ]);
+        // ===== DEBUG END =====
+
+        return $updated;
+    });
+}
 
     public function deleteCategory(int $id): void
     {
@@ -158,17 +171,6 @@ public function getCategories()
             if (!$category) {
                 abort(404, 'Category not found.');
             }
-
-            // $hasChildren = DB::table('categories')
-            //     ->where('parent_id', $id)
-            //     ->exists();
-
-            // if ($hasChildren) {
-            //     abort(
-            //         422,
-            //         'Category cannot be deleted because it has child categories.'
-            //     );
-            // }
 
             $hasProducts = DB::table('products')->where('category_id', $id)->exists();
 
@@ -219,116 +221,5 @@ public function getCategories()
             )->distinct('products.id')->orderByDesc('products.id')->paginate(20);
     }
 
-    // public function updateCategory(int $id, array $data)
-    // {
-    //     return DB::transaction(function () use ($id, $data) {
-    //         $category = DB::table('categories')
-    //             ->where('id', $id)
-    //             ->first();
-
-    //         if (!$category) {
-    //             abort(404, 'Category not found.');
-    //         }
-
-    //         // Generate slug only if name or slug is provided
-    //         $slug = $category->slug;
-
-    //         if (isset($data['name']) || isset($data['slug'])) {
-    //             $slug = $this->generateUniqueSlug(
-    //                 $data['slug'] ?? $data['name'] ?? $category->name,
-    //                 $id
-    //             );
-    //         }
-
-    //         // Keep existing image unless a new image is uploaded
-    //         $imagePath = $category->image;
-
-    //         if (
-    //             isset($data['image']) &&
-    //             $data['image'] instanceof UploadedFile
-    //         ) {
-    //             $newImagePath = $data['image']->store(
-    //                 'categories',
-    //                 'public'
-    //             );
-
-    //             if ($category->image) {
-    //                 Storage::disk('public')->delete($category->image);
-    //             }
-
-    //             $imagePath = $newImagePath;
-    //         }
-
-    //         // Parent category handling
-    //         $parentId = array_key_exists('parent_id', $data)
-    //             ? $data['parent_id']
-    //             : $category->parent_id;
-
-    //         // Prevent category from being its own parent
-    //         if ($parentId !== null && (int) $parentId === $id) {
-    //             abort(422, 'A category cannot be its own parent.');
-    //         }
-
-    //         // Parent must exist
-    //         if ($parentId !== null) {
-    //             $parentExists = DB::table('categories')
-    //                 ->where('id', $parentId)
-    //                 ->exists();
-
-    //             if (!$parentExists) {
-    //                 abort(422, 'Selected parent category does not exist.');
-    //             }
-
-    //             // Prevent circular hierarchy
-    //             $currentParentId = (int) $parentId;
-
-    //             while (true) {
-    //                 if ($currentParentId === $id) {
-    //                     abort(
-    //                         422,
-    //                         'A category cannot be moved under its own descendant.'
-    //                     );
-    //                 }
-
-    //                 $parent = DB::table('categories')
-    //                     ->where('id', $currentParentId)
-    //                     ->first(['id', 'parent_id']);
-
-    //                 if (!$parent || $parent->parent_id === null) {
-    //                     break;
-    //                 }
-
-    //                 $currentParentId = (int) $parent->parent_id;
-    //             }
-    //         }
-
-    //         DB::table('categories')
-    //             ->where('id', $id)
-    //             ->update([
-    //                 'parent_id' => $parentId,
-    //                 'name' => $data['name'] ?? $category->name,
-    //                 'slug' => $slug,
-    //                 'description' => array_key_exists('description', $data)
-    //                     ? $data['description']
-    //                     : $category->description,
-    //                 'image' => $imagePath,
-    //                 'icon' => array_key_exists('icon', $data)
-    //                     ? $data['icon']
-    //                     : $category->icon,
-    //                 'sort_order' => $data['sort_order'] ?? $category->sort_order,
-    //                 'is_active' => array_key_exists('is_active', $data)
-    //                     ? $data['is_active']
-    //                     : $category->is_active,
-    //                 'is_featured' => array_key_exists('is_featured', $data)
-    //                     ? $data['is_featured']
-    //                     : $category->is_featured,
-    //                 'updated_at' => now(),
-    //             ]);
-
-    //         return DB::table('categories')
-    //             ->where('id', $id)
-    //             ->first();
-    //     });
-    // }
 
 }

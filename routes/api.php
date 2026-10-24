@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 use App\Http\Controllers\Api\CloudinaryController;
-use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController, PasswordResetController};
+use App\Http\Controllers\Api\Auth\{SocialAuthController, AuthController, PasswordResetController, PasswordResetOtpController};
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Admin\{AdminDashboardController, ProductsController, ReviewController, OrderController, AdminEarningController,
 AdminPayoutController,
@@ -28,6 +28,23 @@ use App\Http\Controllers\Api\Categories\CategoriesController;
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
 Route::post('/cloudinary/upload', [CloudinaryController::class, 'upload']);
+
+Route::prefix('forgot-password')->group(function () {
+    Route::post('/send-otp', [
+        PasswordResetOtpController::class,
+        'sendOtp',
+    ])->middleware('throttle:5,1');
+
+    Route::post('/verify-otp', [
+        PasswordResetOtpController::class,
+        'verifyOtp',
+    ])->middleware('throttle:10,1');
+
+    Route::post('/reset', [
+        PasswordResetOtpController::class,
+        'resetPassword',
+    ])->middleware('throttle:5,1');
+});
 
 Route::prefix('admin')->group(function () {
     Route::post('/login', [AuthController::class, 'adminLogin']);
@@ -225,7 +242,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/shipping-rates', [ShippingConfigurationController::class, 'storeRate']);
         Route::put('/shipping-rates/{id}', [ShippingConfigurationController::class, 'updateRate']);
         Route::delete('/shipping-rates/{id}', [ShippingConfigurationController::class, 'destroyRate']);
-        
+
         foreach (['countries', 'states', 'cities'] as $resource) {
             Route::get("/{$resource}", [LocationController::class, 'index'])->defaults('resource', $resource);
             Route::post("/{$resource}", [LocationController::class, 'store'])->defaults('resource', $resource);
@@ -241,7 +258,7 @@ Route::prefix('admin')->group(function () {
         Route::put('/tax-settings/{id}', [TaxSettingController::class, 'update']);
         Route::patch('/tax-settings/{id}', [TaxSettingController::class, 'update']);
         Route::delete('/tax-settings/{id}', [TaxSettingController::class, 'destroy']);
-        
+
         Route::get('/email-sms-settings', [EmailSmsSettingController::class, 'index']);
         Route::put('/email-sms-settings', [EmailSmsSettingController::class, 'update']);
         Route::post('/email-sms-settings/test-email', [EmailSmsSettingController::class, 'testEmail']);
@@ -249,7 +266,7 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/audit-logs', [AuditLogController::class, 'index',]);
         Route::get('/audit-logs/{id}', [AuditLogController::class, 'show',])->whereNumber('id');
-        
+
         // Roles
         Route::get('/roles', [RolePermissionController::class, 'indexRoles']);
         Route::post('/roles', [RolePermissionController::class, 'storeRole']);
@@ -278,8 +295,8 @@ Route::prefix('admin')->group(function () {
 Route::get('/categories', [CategoriesController::class, 'getCategories']);
 Route::get('/master-types/{key}', [MasterTypeController::class, 'getByKey']);
 
-Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+// Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+// Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 
 
 Route::get('/test', function () {

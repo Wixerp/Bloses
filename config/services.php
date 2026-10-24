@@ -47,4 +47,24 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
 
+    'meta' => [
+        'app_id' => env('META_APP_ID'),
+        'app_secret' => env('META_APP_SECRET'),
+        'graph_version' => env('META_GRAPH_VERSION'),
+        'redirect_uri' => env('META_REDIRECT_URI'),
+    ],
+
+    'tiktok' => [
+        'client_key' => env('TIKTOK_CLIENT_KEY'),
+        'client_secret' => env('TIKTOK_CLIENT_SECRET'),
+        'redirect_uri' => env('TIKTOK_REDIRECT_URI'),
+    ],
+
+    'social' => [
+        'frontend_url' => env(
+            'SOCIAL_FRONTEND_URL',
+            'http://192.168.2.25:5173'
+        ),
+    ],
+
 ];

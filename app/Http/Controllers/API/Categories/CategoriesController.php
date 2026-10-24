@@ -63,19 +63,8 @@ class CategoriesController extends Controller
     }
 
     public function updateCategories(UpdateCategoryRequest $request, int $id): JsonResponse {
-        Log::info('UPDATE CATEGORY - CONTROLLER REACHED', [
-            'category_id' => $id,
-            'auth_check' => auth()->check(),
-            'user_id' => auth()->id(),
-            'user' => auth()->user()?->email,
-            'validated_data' => $request->validated(),
-        ]);
-        $category = $this->categoriesService
-            ->updateCategory(
-                $id,
-                $request->validated()
-            );
 
+        $category = $this->categoriesService->updateCategory($id, $request->validated());
 
         return response()->json([
             'success' => true,
