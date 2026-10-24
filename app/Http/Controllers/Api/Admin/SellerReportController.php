@@ -37,7 +37,12 @@ class SellerReportController extends Controller
                 'data' => $this->sellerReportService->report($request),
             ]);
         } catch (\Throwable $e) {
-            report($e);
+            \Illuminate\Support\Facades\Log::error('Seller Report Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
                 'success' => false,
