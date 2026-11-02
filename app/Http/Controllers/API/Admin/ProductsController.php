@@ -82,4 +82,15 @@ class ProductsController extends Controller
             'data' => ProductResource::collection($products),
         ]);
     }
+
+    public function filter()
+    {
+        $productfilter = DB::table('products')->select('id', 'name')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $productfilter,
+        ]);
+    }
+
 }

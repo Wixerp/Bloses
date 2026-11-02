@@ -259,4 +259,7 @@ class SalesReportService
             'orders' => $this->orderSales($request),
         ];
     }
+
+
+
 }

@@ -294,10 +294,7 @@ Route::prefix('admin')->group(function () {
 
 Route::get('/categories', [CategoriesController::class, 'getCategories']);
 Route::get('/master-types/{key}', [MasterTypeController::class, 'getByKey']);
-
-// Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-// Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
-
+Route::get('/product-filter', [ProductController::class, 'filter']);
 
 Route::get('/test', function () {
     return 'api run';
